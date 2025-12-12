@@ -163,12 +163,17 @@ function updateDisplay() {
 
   document.getElementById('startButton').style.display = "none";
   
-  // Get phase name, including warmup subsection if applicable
+  // Get phase name, including warmup subsection or interval name if applicable
   let phaseDisplayName = phase.phase;
   if (phase.phase === "Warm-Up") {
     const subsectionName = getWarmupSubsectionName(day, elapsedSec);
     if (subsectionName) {
       phaseDisplayName = "Warm-Up (" + subsectionName + ")";
+    }
+  } else if (phase.phase === "Sustain") {
+    const intervalName = getCurrentIntervalName(day, elapsedSec, blocks);
+    if (intervalName) {
+      phaseDisplayName = intervalName;
     }
   }
   
@@ -203,6 +208,43 @@ function getWarmupSubsectionName(day, elapsedSec) {
     if (elapsedSec >= startSec && elapsedSec < endSec) {
       return subsection.name;
     }
+  }
+  
+  return null;
+}
+
+// Get current interval/recovery name for display in phase box
+function getCurrentIntervalName(day, elapsedSec, blocks) {
+  const hrTargets = getHrTargets();
+  const dayHrTargets = hrTargets[day];
+  if (!dayHrTargets || !dayHrTargets.intervals || !dayHrTargets.intervals.phases) {
+    return null;
+  }
+  
+  const warmSec = blocks.warm * 60;
+  const sustainElapsed = Math.max(0, elapsedSec - warmSec);
+  const phases = dayHrTargets.intervals.phases;
+  const isSequence = dayHrTargets.intervals.isSequence;
+  
+  let elapsedInPhases = sustainElapsed;
+  
+  if (isSequence) {
+    // For sequences (like Friday), go through all phases once
+    const totalDuration = phases.reduce((sum, p) => sum + p.duration * 60, 0);
+    elapsedInPhases = Math.min(sustainElapsed, totalDuration);
+  } else {
+    // For repeating patterns (like Monday), cycle through the phases
+    const cycleDuration = phases.reduce((sum, p) => sum + p.duration * 60, 0);
+    elapsedInPhases = sustainElapsed % cycleDuration;
+  }
+  
+  let accumulated = 0;
+  for (let i = 0; i < phases.length; i++) {
+    const phaseDuration = phases[i].duration * 60;
+    if (elapsedInPhases < accumulated + phaseDuration) {
+      return phases[i].phase; // Return the phase name (e.g., "Interval 1", "Recovery 1")
+    }
+    accumulated += phaseDuration;
   }
   
   return null;

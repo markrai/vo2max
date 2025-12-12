@@ -24,7 +24,7 @@ const workoutData = {
           }
         ]
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 5,
         "target_hr_bpm": "<120"
       }
@@ -41,7 +41,7 @@ const workoutData = {
         "duration_min": "60–75",
         "target_hr_bpm": "120–135"
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -58,7 +58,7 @@ const workoutData = {
         "duration_min": "20–30",
         "notes": "HR not target-driven"
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 3,
         "target_hr_bpm": "<105"
       }
@@ -75,7 +75,7 @@ const workoutData = {
         "duration_min": "20–25",
         "target_hr_bpm": "155–165"
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 5,
         "target_hr_bpm": "<120"
       }
@@ -122,7 +122,7 @@ const workoutData = {
         "description": "4×(4 min hard / 3 min easy)",
         "intervals": [
           {
-            "phase": "Interval 1",
+            "phase": "Interval 1 🔥",
             "duration_min": 4,
             "target_hr_bpm": "158–162"
           },
@@ -132,7 +132,7 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 2",
+            "phase": "Interval 2 🔥",
             "duration_min": 4,
             "target_hr_bpm": "163–167"
           },
@@ -142,7 +142,7 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 3",
+            "phase": "Interval 3 🔥",
             "duration_min": 4,
             "target_hr_bpm": "165–170"
           },
@@ -152,13 +152,13 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 4",
+            "phase": "Interval 4 🔥",
             "duration_min": 4,
             "target_hr_bpm": "168–172"
           }
         ]
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -175,7 +175,7 @@ const workoutData = {
         "duration_min": "75–90",
         "target_hr_bpm": "120–135"
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -192,7 +192,7 @@ const workoutData = {
         "duration_min": "30–40",
         "target_hr_bpm": "<115"
       },
-      "cooldown": {
+      "cooldown ❄️": {
         "duration_min": 3,
         "target_hr_bpm": "<105"
       }
