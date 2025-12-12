@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>VO2 Max Coach</title>
+<meta name="theme-color" content="#0c0c0c">
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="hamburger" onclick="openModal()">☰</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="close-btn" onclick="closeModal()">✕</div>
+    <div class="modal-title">Personal Metrics</div>
+
+    <div class="modal-section">
+      <div class="modal-field">
+        <label class="modal-label" for="weight">Weight</label>
+        <input id="weight" class="modal-input" type="number" placeholder="lbs">
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label" for="height">Height</label>
+        <div style="display: flex; gap: 8px; flex: 1;">
+          <select id="heightFeet" class="modal-input" style="flex: 1;">
+            <option value="">ft</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+          <select id="heightInches" class="modal-input" style="flex: 1;">
+            <option value="">in</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label" for="age">Age</label>
+        <input id="age" class="modal-input" type="number" placeholder="years">
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label" for="sex">Sex</label>
+        <select id="sex" class="modal-input">
+          <option value="">Select</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-field">
+        <label class="modal-label" for="vo2">VO₂ Max</label>
+        <input id="vo2" class="modal-input" type="number" placeholder="optional">
+      </div>
+    </div>
+
+    <button class="button" onclick="saveProfile()">Save Profile</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="cancelModalBg">
+  <div class="modal">
+    <div class="close-btn" onclick="closeCancelModal()">×</div>
+    <div class="modal-title">Cancel Workout</div>
+    <div class="label" style="text-align:center;">Pressing a goal while your workout is running cancels the session.</div>
+    <div class="modal-actions">
+      <button class="button" onclick="confirmCancelWorkout()">Yes, cancel it</button>
+      <button class="button secondary" onclick="closeCancelModal()">Keep going</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="section" id="hrvSection">
+  <div class="label">HRV (ms)</div>
+  <input id="hrvInput" class="input" type="number" placeholder="Enter HRV for today">
+  <button class="button" onclick="saveHRV()">Save HRV</button>
+</div>
+
+<div class="section">
+  <div style="position: relative;">
+    <div id="dayDisplay" class="metric"></div>
+    <button id="nextDayBtn" onclick="cycleToNextDay()">▶</button>
+  </div>
+
+  <button class="button" id="startButton" onclick="startWorkout()">Start Workout</button>
+
+  <div id="phaseDisplay" class="phase-box"></div>
+
+  <div style="position: relative;">
+    <div class="ring-container">
+      <svg class="ring" viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="54"></circle>
+        <circle class="ring-progress" id="ringProgress" cx="60" cy="60" r="54"></circle>
+      </svg>
+      <div class="ring-center" id="ringCenterText"></div>
+    </div>
+
+    <img id="heartIcon" src="heart.png" alt="" style="position: absolute; left: calc(50% - 200px); top: 50%; width: 80px; height: 80px; object-fit: contain; filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);">
+    <div id="hrTarget" class="hr-target" style="position: absolute; left: calc(50% - 200px); top: calc(50% + 50px); transform: translateX(-50%); text-align: center;"></div>
+    <img id="activityIcon" src="" alt="" style="position: absolute; left: calc(50% + 200px); top: 50%; transform: translate(-50%, -50%); display: none; width: 80px; height: 80px; object-fit: contain; filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);">
+  </div>
+</div>
+
+<div id="workoutBlocks" class="work-blocks"></div>
+
+</div>
+
+<script src="workout-data.js"></script>
+<script src="workout-logic.js"></script>
+<script src="profile.js"></script>
+<script src="ui-controls.js"></script>
+<script src="main.js"></script>
+
+</body>
+</html>

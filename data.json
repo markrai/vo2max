@@ -1,0 +1,161 @@
+{
+  "weekly_plan": [
+    {
+      "day": "Monday",
+      "type": "VO2 Intervals (10×1)",
+      "machine": "Bike",
+      "warmup": {
+        "duration_min": 12,
+        "notes": "Gradual build to HR 130–140"
+      },
+      "main_set": {
+        "total_intervals": 10,
+        "intervals": {
+          "hard": {
+            "duration_sec": 60,
+            "target_hr_bpm": "167–176",
+            "cadence_rpm": "85–95"
+          },
+          "easy": {
+            "duration_sec": 60,
+            "target_hr_bpm": "130–145"
+          }
+        }
+      },
+      "cooldown": {
+        "duration_min": 5,
+        "notes": "Easy spin until HR < 120"
+      },
+      "total_duration_est_min": 32
+    },
+    {
+      "day": "Tuesday",
+      "type": "Zone 2",
+      "machine": "Elliptical",
+      "warmup": {
+        "duration_min": 8,
+        "notes": "Smooth ramp to HR ~120"
+      },
+      "main_set": {
+        "duration_min": "60–75",
+        "target_hr_bpm": "120–135",
+        "notes": "Steady cadence; no surges"
+      },
+      "cooldown": {
+        "duration_min": 5,
+        "notes": "Easy until HR < 115"
+      },
+      "total_duration_est_min": "70–90"
+    },
+    {
+      "day": "Wednesday",
+      "type": "Strength",
+      "machine": "Combo Machine",
+      "warmup": {
+        "duration_min": 5,
+        "notes": "Light movement, prep sets"
+      },
+      "main_set": {
+        "duration_min": "20–30",
+        "exercises": [
+          "Lat pulldown",
+          "Chest press",
+          "Row",
+          "Squat or split squat",
+          "Core"
+        ],
+        "notes": "Moderate load; 2–3 sets each"
+      },
+      "cooldown": {
+        "duration_min": 3,
+        "notes": "Light stretching optional"
+      },
+      "total_duration_est_min": "30–40"
+    },
+    {
+      "day": "Thursday",
+      "type": "Threshold",
+      "machine": "Bike",
+      "warmup": {
+        "duration_min": 10,
+        "notes": "Build to HR 135–145"
+      },
+      "main_set": {
+        "duration_min": "20–25",
+        "target_hr_bpm": "155–165",
+        "notes": "Steady hard; no surges"
+      },
+      "cooldown": {
+        "duration_min": 5,
+        "notes": "Easy pedal until HR < 120"
+      },
+      "total_duration_est_min": "35–40"
+    },
+    {
+      "day": "Friday",
+      "type": "4×4 Intervals",
+      "machine": "Bike",
+      "warmup": {
+        "duration_min": 10,
+        "notes": "Ramp smoothly to HR ~130–140"
+      },
+      "main_set": {
+        "total_intervals": 4,
+        "intervals": {
+          "hard": {
+            "duration_min": 4,
+            "target_hr_bpm": "166–176",
+            "cadence_rpm": "85–95"
+          },
+          "easy": {
+            "duration_min": 3,
+            "target_hr_bpm": "120–135"
+          }
+        }
+      },
+      "cooldown": {
+        "duration_min": 5,
+        "notes": "Easy until HR < 120"
+      },
+      "total_duration_est_min": "30–35"
+    },
+    {
+      "day": "Saturday",
+      "type": "Long Zone 2",
+      "machine": "Elliptical or Bike",
+      "warmup": {
+        "duration_min": 10,
+        "notes": "Easy ramp to HR 120"
+      },
+      "main_set": {
+        "duration_min": "75–90",
+        "target_hr_bpm": "120–135",
+        "notes": "Smooth endurance; no HR drift above 135"
+      },
+      "cooldown": {
+        "duration_min": 5,
+        "notes": "Easy HR drop"
+      },
+      "total_duration_est_min": "85–105"
+    },
+    {
+      "day": "Sunday",
+      "type": "Recovery",
+      "machine": "Elliptical or Bike",
+      "warmup": {
+        "duration_min": 3,
+        "notes": "Very easy"
+      },
+      "main_set": {
+        "duration_min": "30–40",
+        "target_hr_bpm": "<115",
+        "notes": "Pure recovery; conversational"
+      },
+      "cooldown": {
+        "duration_min": 3,
+        "notes": "No effort"
+      },
+      "total_duration_est_min": "35–45"
+    }
+  ]
+}
