@@ -198,6 +198,17 @@ function parseHrValue(value) {
 function handleCharacteristicValueChanged(event) {
   let hr = parseHrValue(event.target.value);
   updateHrDisplay(hr);
+  
+  // Store live BPM and update timestamp
+  if (typeof window !== 'undefined') {
+    window.liveBpm = hr;
+    window.lastBpmUpdateTime = Date.now();
+    
+    // Update heart animation with live BPM
+    if (typeof window.updateHeartPulse === 'function') {
+      window.updateHeartPulse(hr);
+    }
+  }
 }
 
 window.initiateHrConnection = initiateHrConnection;

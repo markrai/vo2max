@@ -1,5 +1,12 @@
 // UI controls and display updates
 let selectedDay = null; // Track selected day for testing (null = today)
+let liveBpm = null; // Store live BPM from BLE monitor
+let lastBpmUpdateTime = null; // Track when we last received BPM data
+const BPM_TIMEOUT_MS = 3000; // Stop animation if no BPM received for 3 seconds
+
+// Expose live BPM variables to workout-logic.js via window object
+window.liveBpm = liveBpm;
+window.lastBpmUpdateTime = lastBpmUpdateTime;
 
 function cycleToNextDay() {
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -26,7 +33,7 @@ function connectHr() {
 function updateHrDisplay(hr) {
   const hrNowEl = document.getElementById('hrNow');
   if (hrNowEl) {
-    hrNowEl.textContent = hr + " bpm";
+    hrNowEl.textContent = hr; // Display just the number, no "bpm" text
   }
 }
 
@@ -128,7 +135,7 @@ function updateDisplay() {
     document.getElementById('startButton').style.display = "none";
     updateRing(0, { warm: 1, sustain: 1, cool: 1 });
     hrTargetEl.textContent = "";
-    updateHeartPulse("");
+    updateHeartPulse(null);
     applyPhaseStyle("Rest");
     return;
   }
@@ -150,7 +157,7 @@ function updateDisplay() {
     document.getElementById('startButton').style.display = "block";
     updateRing(0, blocks);
     hrTargetEl.textContent = "";
-    updateHeartPulse("");
+    updateHeartPulse(null);
     applyPhaseStyle("idle");
     return;
   }
@@ -169,7 +176,7 @@ function updateDisplay() {
     document.getElementById('startButton').onclick = restartWorkout;
     document.getElementById('startButton').style.display = "block";
     hrTargetEl.textContent = "";
-    updateHeartPulse("");
+    updateHeartPulse(null);
     applyPhaseStyle("completed");
     return;
   }
@@ -198,8 +205,9 @@ function updateDisplay() {
   const hrTargetTextValue = hrTargetText(phase.phase, day, elapsedSec, blocks);
   hrTargetEl.textContent = hrTargetTextValue;
   
-  // Update heart pulsation rate based on target HR
-  updateHeartPulse(hrTargetTextValue);
+  // Heart animation is now controlled by live BPM from BLE monitor
+  // Check if BPM data is stale and update animation accordingly
+  updateHeartPulse();
   
   applyPhaseStyle(phase.phase);
 }
@@ -263,49 +271,41 @@ function getCurrentIntervalName(day, elapsedSec, blocks) {
   return null;
 }
 
-// Extract lower HR value from target string and update heart animation
-function updateHeartPulse(hrTargetText) {
+// Update heart animation based on live BPM from BLE monitor
+function updateHeartPulse(bpmValue) {
   const heartIcon = document.getElementById('heartIcon');
   if (!heartIcon) return;
   
-  if (!hrTargetText || hrTargetText === "") {
-    // No target HR - stop animation
+  // Get current live BPM from window object (updated by workout-logic.js)
+  const currentLiveBpm = window.liveBpm;
+  const currentLastUpdate = window.lastBpmUpdateTime;
+  
+  // Check if BPM data is stale (no update for more than timeout period)
+  const now = Date.now();
+  if (currentLastUpdate && (now - currentLastUpdate) > BPM_TIMEOUT_MS) {
+    // No BPM data received recently - stop animation
     heartIcon.style.setProperty('animation', 'none', 'important');
+    window.liveBpm = null;
     return;
   }
   
-  // Extract the lower number from strings like "155–165 bpm" or "<120 bpm"
-  let hrValue = null;
+  // Use the provided BPM value, or fall back to stored live BPM
+  const bpm = bpmValue !== undefined && bpmValue !== null ? bpmValue : currentLiveBpm;
   
-  // Try to match patterns like "155–165" or "<120" or "120"
-  const rangeMatch = hrTargetText.match(/(\d+)[–-](\d+)/);
-  const lessThanMatch = hrTargetText.match(/<(\d+)/);
-  const singleMatch = hrTargetText.match(/(\d+)/);
-  
-  if (rangeMatch) {
-    // Range like "155–165" - use the lower value
-    hrValue = parseInt(rangeMatch[1]);
-  } else if (lessThanMatch) {
-    // Less than like "<120" - use that value
-    hrValue = parseInt(lessThanMatch[1]);
-  } else if (singleMatch) {
-    // Single number
-    hrValue = parseInt(singleMatch[1]);
-  }
-  
-  if (hrValue && hrValue > 0) {
+  if (bpm && bpm > 0) {
     // Calculate animation duration: 60 seconds / bpm = seconds per beat
-    const duration = 60 / hrValue;
+    const duration = 60 / bpm;
     // Use different animation name for mobile vs desktop
     const isMobile = window.matchMedia("(max-width: 768px) and (orientation: portrait)").matches;
     const animationName = isMobile ? 'heartPulseMobile' : 'heartPulse';
     // Use !important to override any CSS rules
     heartIcon.style.setProperty('animation', `${animationName} ${duration}s ease-in-out infinite`, 'important');
-    console.log('Setting heart animation:', animationName, duration, 's for', hrValue, 'bpm');
+    console.log('Setting heart animation:', animationName, duration, 's for', bpm, 'bpm (live)');
   } else {
-    // Invalid or no HR value - stop animation
+    // No valid BPM - stop animation
     heartIcon.style.setProperty('animation', 'none', 'important');
-    console.log('No valid HR value found in:', hrTargetText);
   }
 }
 
+// Expose updateHeartPulse function globally after it's defined
+window.updateHeartPulse = updateHeartPulse;
