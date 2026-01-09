@@ -17,6 +17,7 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
 .time-left { text-align: center; font-size: 1.1rem; margin-top: 10px; opacity: .9; }
 .work-blocks { text-align: center; margin-top: 8px; font-size: 0.55rem; opacity: .8; }
 .hr-target { text-align: center; font-size: 0.7rem; opacity: .9; }
+.hr-now { text-align: center; font-size: 0.7rem; opacity: .9; }
 .calories { text-align: center; margin-top: 6px; font-size: 0.9rem; opacity: .9; }
 
 .hamburger { position: fixed; top: 10px; right: 12px; font-size: 28px; cursor: pointer; padding: 6px 10px; z-index: 20; }
@@ -90,6 +91,16 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     transform: none !important;
     font-size: 0.6rem !important;
     text-align: left !important;
+  }
+  
+  #hrNow {
+    position: absolute !important;
+    right: 16px !important;
+    bottom: -5px !important;
+    top: auto !important;
+    transform: none !important;
+    font-size: 0.6rem !important;
+    text-align: right !important;
   }
   
   /* Heart pulse animation for mobile */

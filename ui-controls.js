@@ -17,6 +17,19 @@ function getSelectedDay() {
 // Make function globally accessible
 window.getSelectedDay = getSelectedDay;
 window.cycleToNextDay = cycleToNextDay;
+window.connectHr = connectHr;
+
+function connectHr() {
+  initiateHrConnection();
+}
+
+function updateHrDisplay(hr) {
+  const hrNowEl = document.getElementById('hrNow');
+  if (hrNowEl) {
+    hrNowEl.textContent = hr + " bpm";
+  }
+}
+
 
 const PHASE_STYLE_MAP = {
   "Warm-Up": { stroke: "#ffad5c", background: "rgba(255,173,92,0.18)", text: "#ffe9cc" },

@@ -154,3 +154,51 @@ function hrTargetText(phaseName, day, elapsedSec, blocks) {
   return "";
 }
 
+function initiateHrConnection() {
+  navigator.bluetooth.requestDevice({
+    filters: [{ services: ['heart_rate'] }]
+  })
+  .then(device => {
+    return device.gatt.connect();
+  })
+  .then(server => {
+    return server.getPrimaryService('heart_rate');
+  })
+  .then(service => {
+    return service.getCharacteristic('heart_rate_measurement');
+  })
+  .then(characteristic => {
+    return characteristic.startNotifications();
+  })
+  .then(characteristic => {
+    characteristic.addEventListener('characteristicvaluechanged',
+                                    handleCharacteristicValueChanged);
+  })
+  .catch(error => {
+    console.error(error);
+  });
+}
+
+function parseHrValue(value) {
+  value = value.buffer ? value : new DataView(value);
+  let flags = value.getUint8(0);
+  let rate16Bits = flags & 0x1;
+  let result = {};
+  let index = 1;
+  if (rate16Bits) {
+    result.heartRate = value.getUint16(index, true);
+    index += 2;
+  } else {
+    result.heartRate = value.getUint8(index);
+    index += 1;
+  }
+  return result.heartRate;
+}
+
+function handleCharacteristicValueChanged(event) {
+  let hr = parseHrValue(event.target.value);
+  updateHrDisplay(hr);
+}
+
+window.initiateHrConnection = initiateHrConnection;
+

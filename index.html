@@ -107,6 +107,7 @@
   </div>
 
   <button class="button" id="startButton" onclick="startWorkout()">Start Workout</button>
+  <button class="button" id="connectHrButton" onclick="connectHr()">Connect HR</button>
 
   <div id="phaseDisplay" class="phase-box"></div>
 
@@ -121,6 +122,7 @@
 
     <img id="heartIcon" src="heart.png" alt="" style="position: absolute; left: calc(50% - 200px); top: 50%; width: 80px; height: 80px; object-fit: contain; filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);">
     <div id="hrTarget" class="hr-target" style="position: absolute; left: calc(50% - 200px); top: calc(50% + 50px); transform: translateX(-50%); text-align: center;"></div>
+    <div id="hrNow" class="hr-now" style="position: absolute; left: calc(50% - 120px); top: calc(50% + 50px); transform: translateX(-50%); text-align: center;"></div>
     <img id="activityIcon" src="" alt="" style="position: absolute; left: calc(50% + 200px); top: 50%; transform: translate(-50%, -50%); display: none; width: 80px; height: 80px; object-fit: contain; filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);">
   </div>
 </div>
