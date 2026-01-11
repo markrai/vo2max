@@ -10,21 +10,21 @@ const workoutData = {
         "target_hr_bpm": "130–140"
       },
       "main_set": {
-        "description": "10×(1 min hard / 1 min easy)",
+        "repetitions": 10,
         "intervals": [
           {
             "phase": "hard",
-            "duration_sec": 60,
+            "duration_min": 1,
             "target_hr_bpm": "167–176"
           },
           {
             "phase": "easy",
-            "duration_sec": 60,
+            "duration_min": 1,
             "target_hr_bpm": "130–145"
           }
         ]
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 5,
         "target_hr_bpm": "<120"
       }
@@ -41,7 +41,7 @@ const workoutData = {
         "duration_min": "60–75",
         "target_hr_bpm": "120–135"
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -58,7 +58,7 @@ const workoutData = {
         "duration_min": "20–30",
         "notes": "HR not target-driven"
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 3,
         "target_hr_bpm": "<105"
       }
@@ -75,7 +75,7 @@ const workoutData = {
         "duration_min": "20–25",
         "target_hr_bpm": "155–165"
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 5,
         "target_hr_bpm": "<120"
       }
@@ -119,10 +119,10 @@ const workoutData = {
         ]
       },
       "main_set": {
-        "description": "4×(4 min hard / 3 min easy)",
+        "is_sequence": true,
         "intervals": [
           {
-            "phase": "Interval 1 🔥",
+            "phase": "Interval 1",
             "duration_min": 4,
             "target_hr_bpm": "158–162"
           },
@@ -132,7 +132,7 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 2 🔥",
+            "phase": "Interval 2",
             "duration_min": 4,
             "target_hr_bpm": "163–167"
           },
@@ -142,7 +142,7 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 3 🔥",
+            "phase": "Interval 3",
             "duration_min": 4,
             "target_hr_bpm": "165–170"
           },
@@ -152,13 +152,13 @@ const workoutData = {
             "target_hr_bpm": "125–140"
           },
           {
-            "phase": "Interval 4 🔥",
+            "phase": "Interval 4",
             "duration_min": 4,
             "target_hr_bpm": "168–172"
           }
         ]
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -175,7 +175,7 @@ const workoutData = {
         "duration_min": "75–90",
         "target_hr_bpm": "120–135"
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 5,
         "target_hr_bpm": "<115"
       }
@@ -192,7 +192,7 @@ const workoutData = {
         "duration_min": "30–40",
         "target_hr_bpm": "<115"
       },
-      "cooldown ❄️": {
+      "cooldown": {
         "duration_min": 3,
         "target_hr_bpm": "<105"
       }
@@ -216,7 +216,7 @@ function parseDuration(duration) {
   return 0;
 }
 
-// Transform data.json workout structure to the format expected by the app
+// Transform workout data structure to the format expected by the app
 function transformWorkoutData(workoutData) {
   const transformed = {};
   
@@ -252,18 +252,16 @@ function transformWorkoutData(workoutData) {
         // Interval-based workout
         const intervals = workout.main_set.intervals;
         
-        // Check if this is a repeating pattern (like Monday) or a sequence (like Friday)
-        // If intervals have specific names like "Interval 1", "Interval 2", etc., it's a sequence
-        const isSequence = intervals.some(i => i.phase && /Interval \d+|Recovery \d+/.test(i.phase));
+        // Check if this is a sequence (explicitly marked) or repeating pattern
+        const isSequence = workout.main_set.is_sequence === true;
         
         let totalDuration = 0;
         const intervalPhases = [];
         
         intervals.forEach(interval => {
+          // All durations are now in minutes (normalized)
           let intervalDuration = 0;
-          if (interval.duration_sec) {
-            intervalDuration = interval.duration_sec / 60; // convert to minutes
-          } else if (interval.duration_min) {
+          if (interval.duration_min) {
             intervalDuration = parseDuration(interval.duration_min);
           }
           totalDuration += intervalDuration;
@@ -277,7 +275,7 @@ function transformWorkoutData(workoutData) {
         });
         
         if (isSequence) {
-          // For sequences (like Friday with Interval 1, Recovery 1, etc.), use total duration
+          // For sequences (like Friday), use total duration
           // All phases are already in the array, no repetition needed
           sustain = totalDuration;
           hrTargets[workout.day].intervals = {
@@ -286,14 +284,8 @@ function transformWorkoutData(workoutData) {
             isSequence: true
           };
         } else {
-          // For repeating patterns (like Monday), calculate repetitions from description
-          let repetitions = 1;
-          if (workout.main_set.description) {
-            const match = workout.main_set.description.match(/(\d+)×/);
-            if (match) {
-              repetitions = parseInt(match[1]);
-            }
-          }
+          // For repeating patterns (like Monday), use explicit repetitions field
+          const repetitions = workout.main_set.repetitions || 1;
           
           // For repeating patterns, the intervals array contains one cycle
           // Multiply by repetitions to get total duration

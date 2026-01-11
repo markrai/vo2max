@@ -6,6 +6,10 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>VO2 Max Coach</title>
 <meta name="theme-color" content="#0c0c0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VO2 Coach">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -76,6 +80,10 @@
       </div>
     </div>
 
+    <div class="modal-section">
+      <button class="button" id="connectHrButton" onclick="connectHr()">Connect HR</button>
+    </div>
+
     <button class="button" onclick="saveProfile()">Save Profile</button>
   </div>
 </div>
@@ -107,7 +115,6 @@
   </div>
 
   <button class="button" id="startButton" onclick="startWorkout()">Start Workout</button>
-  <button class="button" id="connectHrButton" onclick="connectHr()">Connect HR</button>
 
   <div id="phaseDisplay" class="phase-box"></div>
 
@@ -136,6 +143,7 @@
 <script src="profile.js"></script>
 <script src="ui-controls.js"></script>
 <script src="main.js"></script>
+<script src="pwa-install.js"></script>
 
 </body>
 </html>

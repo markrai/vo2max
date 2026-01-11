@@ -33,7 +33,11 @@ function connectHr() {
 function updateHrDisplay(hr) {
   const hrNowEl = document.getElementById('hrNow');
   if (hrNowEl) {
-    hrNowEl.textContent = hr; // Display just the number, no "bpm" text
+    if (hr && hr > 0) {
+      hrNowEl.textContent = hr; // Display just the number, no "bpm" text
+    } else {
+      hrNowEl.textContent = ""; // Clear display when no valid HR
+    }
   }
 }
 
@@ -136,6 +140,7 @@ function updateDisplay() {
     updateRing(0, { warm: 1, sustain: 1, cool: 1 });
     hrTargetEl.textContent = "";
     updateHeartPulse(null);
+    updateHeartColor(null, "");
     applyPhaseStyle("Rest");
     return;
   }
@@ -158,6 +163,7 @@ function updateDisplay() {
     updateRing(0, blocks);
     hrTargetEl.textContent = "";
     updateHeartPulse(null);
+    updateHeartColor(null, "");
     applyPhaseStyle("idle");
     return;
   }
@@ -177,6 +183,7 @@ function updateDisplay() {
     document.getElementById('startButton').style.display = "block";
     hrTargetEl.textContent = "";
     updateHeartPulse(null);
+    updateHeartColor(null, "");
     applyPhaseStyle("completed");
     return;
   }
@@ -208,6 +215,23 @@ function updateDisplay() {
   // Heart animation is now controlled by live BPM from BLE monitor
   // Check if BPM data is stale and update animation accordingly
   updateHeartPulse();
+  
+  // Check if BPM data is stale and clear display if needed
+  const currentLiveBpm = window.liveBpm;
+  const currentLastUpdate = window.lastBpmUpdateTime;
+  const now = Date.now();
+  if (currentLastUpdate && (now - currentLastUpdate) > BPM_TIMEOUT_MS) {
+    // No BPM data received recently - clear display
+    updateHrDisplay(null);
+    window.liveBpm = null;
+  }
+  
+  // Update heart color based on live BPM vs target range
+  if (currentLiveBpm && currentLiveBpm > 0) {
+    updateHeartColor(currentLiveBpm, hrTargetTextValue);
+  } else {
+    updateHeartColor(null, hrTargetTextValue);
+  }
   
   applyPhaseStyle(phase.phase);
 }
@@ -271,6 +295,77 @@ function getCurrentIntervalName(day, elapsedSec, blocks) {
   return null;
 }
 
+// Parse HR target range from text (e.g., "110–120 bpm", "<120 bpm", "155–165 bpm")
+function parseHrTargetRange(hrTargetText) {
+  if (!hrTargetText || hrTargetText === "") {
+    return null;
+  }
+  
+  // Try to match patterns like "110–120" or "155–165"
+  const rangeMatch = hrTargetText.match(/(\d+)[–-](\d+)/);
+  if (rangeMatch) {
+    return {
+      min: parseInt(rangeMatch[1]),
+      max: parseInt(rangeMatch[2])
+    };
+  }
+  
+  // Try to match less than pattern like "<120"
+  const lessThanMatch = hrTargetText.match(/<(\d+)/);
+  if (lessThanMatch) {
+    const value = parseInt(lessThanMatch[1]);
+    return {
+      min: 0,
+      max: value - 1 // Exclusive upper bound for "<120" means max is 119
+    };
+  }
+  
+  // Try to match single number
+  const singleMatch = hrTargetText.match(/(\d+)/);
+  if (singleMatch) {
+    const value = parseInt(singleMatch[1]);
+    // For single number, treat as a range with ±5 tolerance
+    return {
+      min: value - 5,
+      max: value + 5
+    };
+  }
+  
+  return null;
+}
+
+// Update heart icon color based on BPM comparison to target range
+function updateHeartColor(liveBpm, hrTargetText) {
+  const heartIcon = document.getElementById('heartIcon');
+  if (!heartIcon) return;
+  
+  // If no live BPM or no target, use default color (red)
+  if (!liveBpm || liveBpm <= 0 || !hrTargetText || hrTargetText === "") {
+    heartIcon.style.setProperty('filter', 'brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg)', 'important');
+    return;
+  }
+  
+  const range = parseHrTargetRange(hrTargetText);
+  if (!range) {
+    // Can't parse range, use default color
+    heartIcon.style.setProperty('filter', 'brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg)', 'important');
+    return;
+  }
+  
+  // Determine color based on BPM comparison
+  let hueRotate = 0; // Default red
+  if (liveBpm > range.max) {
+    // Above range - Purple (hue-rotate ~270deg)
+    hueRotate = 270;
+  } else if (liveBpm < range.min) {
+    // Below range - Blue (hue-rotate ~240deg)
+    hueRotate = 240;
+  }
+  // Within range stays red (hueRotate = 0)
+  
+  heartIcon.style.setProperty('filter', `brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(${hueRotate}deg)`, 'important');
+}
+
 // Update heart animation based on live BPM from BLE monitor
 function updateHeartPulse(bpmValue) {
   const heartIcon = document.getElementById('heartIcon');
@@ -286,6 +381,11 @@ function updateHeartPulse(bpmValue) {
     // No BPM data received recently - stop animation
     heartIcon.style.setProperty('animation', 'none', 'important');
     window.liveBpm = null;
+    // Clear HR display when no signal
+    updateHrDisplay(null);
+    // Reset to default color when no data
+    const hrTargetEl = document.getElementById('hrTarget');
+    updateHeartColor(null, hrTargetEl ? hrTargetEl.textContent : "");
     return;
   }
   
@@ -301,11 +401,21 @@ function updateHeartPulse(bpmValue) {
     // Use !important to override any CSS rules
     heartIcon.style.setProperty('animation', `${animationName} ${duration}s ease-in-out infinite`, 'important');
     console.log('Setting heart animation:', animationName, duration, 's for', bpm, 'bpm (live)');
+    
+    // Update heart color based on BPM vs target range
+    const hrTargetEl = document.getElementById('hrTarget');
+    if (hrTargetEl) {
+      updateHeartColor(bpm, hrTargetEl.textContent);
+    }
   } else {
     // No valid BPM - stop animation
     heartIcon.style.setProperty('animation', 'none', 'important');
+    // Reset to default color
+    const hrTargetEl = document.getElementById('hrTarget');
+    updateHeartColor(null, hrTargetEl ? hrTargetEl.textContent : "");
   }
 }
 
-// Expose updateHeartPulse function globally after it's defined
+// Expose functions globally after they're defined
 window.updateHeartPulse = updateHeartPulse;
+window.updateHeartColor = updateHeartColor;

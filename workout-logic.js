@@ -208,6 +208,12 @@ function handleCharacteristicValueChanged(event) {
     if (typeof window.updateHeartPulse === 'function') {
       window.updateHeartPulse(hr);
     }
+    
+    // Update heart color based on current target range
+    const hrTargetEl = document.getElementById('hrTarget');
+    if (hrTargetEl && typeof window.updateHeartColor === 'function') {
+      window.updateHeartColor(hr, hrTargetEl.textContent);
+    }
   }
 }
 
