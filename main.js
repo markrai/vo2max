@@ -31,7 +31,9 @@ if (workoutSummaryModalBg) {
 
 // Initialize app
 loadProfile();
-initializeWorkoutPlan();
-updateDisplay();
-setInterval(updateDisplay, 1000);
+(async () => {
+  await initializeWorkoutPlan();
+  updateDisplay();
+  setInterval(updateDisplay, 1000);
+})();
 

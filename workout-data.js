@@ -1,204 +1,5 @@
-// Workout data and transformation
-const workoutData = {
-  "weekly_plan": [
-    {
-      "day": "Monday",
-      "type": "VO2 Intervals (10×1)",
-      "machine": "Bike",
-      "warmup": {
-        "duration_min": 12,
-        "target_hr_bpm": "130–140"
-      },
-      "main_set": {
-        "repetitions": 10,
-        "intervals": [
-          {
-            "phase": "hard",
-            "duration_min": 1,
-            "target_hr_bpm": "167–176"
-          },
-          {
-            "phase": "easy",
-            "duration_min": 1,
-            "target_hr_bpm": "130–145"
-          }
-        ]
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<120"
-      }
-    },
-    {
-      "day": "Tuesday",
-      "type": "Zone 2",
-      "machine": "Elliptical",
-      "warmup": {
-        "duration_min": 8,
-        "target_hr_bpm": "110–120"
-      },
-      "main_set": {
-        "duration_min": "60–75",
-        "target_hr_bpm": "120–135"
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<115"
-      }
-    },
-    {
-      "day": "Wednesday",
-      "type": "Strength",
-      "machine": "Combo Machine",
-      "warmup": {
-        "duration_min": 5,
-        "target_hr_bpm": "100–115"
-      },
-      "main_set": {
-        "duration_min": "20–30",
-        "notes": "HR not target-driven"
-      },
-      "cooldown": {
-        "duration_min": 3,
-        "target_hr_bpm": "<105"
-      }
-    },
-    {
-      "day": "Thursday",
-      "type": "Threshold",
-      "machine": "Bike",
-      "warmup": {
-        "duration_min": 10,
-        "target_hr_bpm": "135–145"
-      },
-      "main_set": {
-        "duration_min": "20–25",
-        "target_hr_bpm": "155–165"
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<120"
-      }
-    },
-    {
-      "day": "Friday",
-      "type": "4×4 Intervals",
-      "machine": "Bike",
-      "warmup": {
-        "duration_min": 12,
-        "target_hr_bpm": "105 → 150",
-        "subsections": [
-          {
-            "name": "Very Easy",
-            "start_min": 0,
-            "end_min": 3,
-            "target_hr_bpm": "105–120",
-            "notes": "Light pedals. No tension in chest or legs."
-          },
-          {
-            "name": "Easy Steady",
-            "start_min": 3,
-            "end_min": 6,
-            "target_hr_bpm": "120–130",
-            "notes": "Start breathing rhythmically. Smooth, even cadence."
-          },
-          {
-            "name": "Moderate Build",
-            "start_min": 6,
-            "end_min": 9,
-            "target_hr_bpm": "130–140",
-            "notes": "Increase cadence + slight resistance. Let legs warm, don't force it."
-          },
-          {
-            "name": "Controlled Pre-Load",
-            "start_min": 9,
-            "end_min": 12,
-            "target_hr_bpm": "140–150",
-            "notes": "Think \"sustainably firm, not hard\". This primes your HR response for rep #1."
-          }
-        ]
-      },
-      "main_set": {
-        "is_sequence": true,
-        "intervals": [
-          {
-            "phase": "Interval 1",
-            "duration_min": 4,
-            "target_hr_bpm": "158–162"
-          },
-          {
-            "phase": "Recovery 1",
-            "duration_min": 3,
-            "target_hr_bpm": "125–140"
-          },
-          {
-            "phase": "Interval 2",
-            "duration_min": 4,
-            "target_hr_bpm": "163–167"
-          },
-          {
-            "phase": "Recovery 2",
-            "duration_min": 3,
-            "target_hr_bpm": "125–140"
-          },
-          {
-            "phase": "Interval 3",
-            "duration_min": 4,
-            "target_hr_bpm": "165–170"
-          },
-          {
-            "phase": "Recovery 3",
-            "duration_min": 3,
-            "target_hr_bpm": "125–140"
-          },
-          {
-            "phase": "Interval 4",
-            "duration_min": 4,
-            "target_hr_bpm": "168–172"
-          }
-        ]
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<115"
-      }
-    },
-    {
-      "day": "Saturday",
-      "type": "Long Zone 2",
-      "machine": "Elliptical or Bike",
-      "warmup": {
-        "duration_min": 10,
-        "target_hr_bpm": "110–120"
-      },
-      "main_set": {
-        "duration_min": "75–90",
-        "target_hr_bpm": "120–135"
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<115"
-      }
-    },
-    {
-      "day": "Sunday",
-      "type": "Recovery Session",
-      "machine": "Bike or Elliptical",
-      "warmup": {
-        "duration_min": 3,
-        "target_hr_bpm": "<110"
-      },
-      "main_set": {
-        "duration_min": "30–40",
-        "target_hr_bpm": "<115"
-      },
-      "cooldown": {
-        "duration_min": 3,
-        "target_hr_bpm": "<105"
-      }
-    }
-  ]
-};
+// Workout data transformation and loading
+// Workout recipe is now loaded from external data.json file
 
 // Shared state
 let plan = {};
@@ -316,12 +117,30 @@ function transformWorkoutData(workoutData) {
   return transformed;
 }
 
-// Initialize workout plan from embedded data
-function initializeWorkoutPlan() {
+// Initialize workout plan from external JSON file
+async function initializeWorkoutPlan() {
   workoutMetadata = {}; // Reset metadata
   hrTargets = {}; // Reset HR targets
-  plan = transformWorkoutData(workoutData);
-  console.log('Plan after transformation:', plan);
+  
+  try {
+    // Fetch workout data from external JSON file
+    const response = await fetch('data.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const workoutData = await response.json();
+    
+    // Transform and store the workout data
+    plan = transformWorkoutData(workoutData);
+    console.log('Plan loaded from data.json:', plan);
+  } catch (error) {
+    console.error('Failed to load workout data from data.json:', error);
+    // Set empty plan if fetch fails - app will show no workouts
+    plan = {};
+    workoutMetadata = {};
+    hrTargets = {};
+  }
+  
   const today = todayName();
   console.log('Today is:', today, 'Plan for today:', plan[today]);
 }
