@@ -3,7 +3,7 @@
   "short_name": "VO2 Coach",
   "description": "Workout coaching app for VO2 max training with heart rate monitoring",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#0c0c0c",
   "theme_color": "#0c0c0c",
   "orientation": "portrait-primary",

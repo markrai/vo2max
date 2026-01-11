@@ -12,15 +12,68 @@ function startWorkout() {
   // Get selected day from ui-controls.js if available, otherwise use today
   const day = (typeof getSelectedDay === 'function') ? getSelectedDay() : todayName();
   const key = "start_" + day;
-  localStorage.setItem(key, Date.now());
+  const startTime = Date.now();
+  localStorage.setItem(key, startTime);
+  
+  // Initialize workout session
+  if (typeof window.generateUUID === 'function') {
+    const sessionId = window.generateUUID();
+    localStorage.setItem("session_id_" + day, sessionId);
+    localStorage.setItem("session_start_" + day, startTime);
+    localStorage.setItem("summary_emitted_" + day, "false");
+    
+    // Initialize IndexedDB
+    if (typeof window.initDB === 'function') {
+      window.initDB().catch(err => console.error('Failed to init DB:', err));
+    }
+  }
+  
+  // Activate wake lock to keep screen awake during workout
+  if (typeof window.requestWakeLock === 'function') {
+    window.requestWakeLock();
+  }
+  
   if (typeof updateDisplay === 'function') updateDisplay();
 }
 
-function restartWorkout() {
+async function restartWorkout() {
   // Get selected day from ui-controls.js if available, otherwise use today
   const day = (typeof getSelectedDay === 'function') ? getSelectedDay() : todayName();
   const key = "start_" + day;
+  const startTime = localStorage.getItem(key);
+  
+  // Get session info before clearing
+  const sessionId = localStorage.getItem("session_id_" + day);
+  const sessionStart = localStorage.getItem("session_start_" + day);
+  const summaryEmitted = localStorage.getItem("summary_emitted_" + day);
+  
+  // Emit summary if workout was active (aborted workout)
+  if (startTime && sessionId && sessionStart && summaryEmitted === "false" && typeof window.generateWorkoutSummary === 'function') {
+    const endedAt = Date.now();
+    try {
+      const summary = await window.generateWorkoutSummary(sessionId, parseInt(sessionStart), endedAt, day);
+      await window.emitWorkoutSummary(summary);
+    } catch (error) {
+      console.error('Error emitting workout summary on cancel:', error);
+    }
+  }
+  
+  // Release wake lock
+  if (typeof window.releaseWakeLock === 'function') {
+    await window.releaseWakeLock();
+  }
+  
+  // Clear workout state
   localStorage.removeItem(key);
+  localStorage.removeItem("session_id_" + day);
+  localStorage.removeItem("session_start_" + day);
+  localStorage.removeItem("summary_emitted_" + day);
+  
+  // Clear HR samples for this session (optional cleanup)
+  if (sessionId && typeof window.clearHrSamples === 'function') {
+    await window.clearHrSamples(sessionId).catch(err => console.error('Error clearing HR samples:', err));
+  }
+  
   if (typeof updateDisplay === 'function') updateDisplay();
 }
 
@@ -213,6 +266,19 @@ function handleCharacteristicValueChanged(event) {
     const hrTargetEl = document.getElementById('hrTarget');
     if (hrTargetEl && typeof window.updateHeartColor === 'function') {
       window.updateHeartColor(hr, hrTargetEl.textContent);
+    }
+    
+    // Store HR sample if workout is active
+    const day = (typeof getSelectedDay === 'function') ? getSelectedDay() : todayName();
+    const startTime = getStartTime(day);
+    if (startTime && typeof window.storeHrSample === 'function') {
+      const sessionId = localStorage.getItem("session_id_" + day);
+      if (sessionId) {
+        const elapsedSec = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+        window.storeHrSample(sessionId, elapsedSec, hr).catch(err => {
+          console.error('Error storing HR sample:', err);
+        });
+      }
     }
   }
 }

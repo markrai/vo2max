@@ -58,6 +58,7 @@ function openModal() { document.getElementById('modalBg').style.display = "flex"
 function closeModal() { document.getElementById('modalBg').style.display = "none"; }
 function openCancelModal() { document.getElementById('cancelModalBg').style.display = "flex"; }
 function closeCancelModal() { document.getElementById('cancelModalBg').style.display = "none"; }
+
 function confirmCancelWorkout() { restartWorkout(); closeCancelModal(); }
 function promptCancelWorkout() {
   if (!phaseDisplayEl) return;
@@ -174,6 +175,31 @@ function updateDisplay() {
   updateRing(elapsedSec, blocks);
 
   if (phase.done) {
+    // Release wake lock when workout completes
+    if (typeof window.releaseWakeLock === 'function') {
+      window.releaseWakeLock();
+    }
+    
+    // Emit workout summary on completion (only once)
+    const summaryEmitted = localStorage.getItem("summary_emitted_" + day);
+    if (summaryEmitted === "false" && typeof window.generateWorkoutSummary === 'function') {
+      const sessionId = localStorage.getItem("session_id_" + day);
+      const sessionStart = localStorage.getItem("session_start_" + day);
+      if (sessionId && sessionStart) {
+        const endedAt = Date.now();
+        window.generateWorkoutSummary(sessionId, parseInt(sessionStart), endedAt, day)
+          .then(summary => {
+            return window.emitWorkoutSummary(summary);
+          })
+          .then(() => {
+            localStorage.setItem("summary_emitted_" + day, "true");
+          })
+          .catch(error => {
+            console.error('Error emitting workout summary on completion:', error);
+          });
+      }
+    }
+    
     if (phaseDisplayEl) {
       phaseDisplayEl.innerHTML = '<span class="phase-name">Completed</span>';
       phaseDisplayEl.dataset.phaseState = "completed";
@@ -419,3 +445,162 @@ function updateHeartPulse(bpmValue) {
 // Expose functions globally after they're defined
 window.updateHeartPulse = updateHeartPulse;
 window.updateHeartColor = updateHeartColor;
+
+// Tab switching for settings modal
+function switchTab(tabName) {
+  // Hide all tabs
+  document.getElementById('personalTab').classList.remove('active');
+  document.getElementById('workoutsTab').classList.remove('active');
+  
+  // Remove active class from all buttons
+  const buttons = document.querySelectorAll('.tab-button');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  if (tabName === 'personal') {
+    document.getElementById('personalTab').classList.add('active');
+    buttons[0].classList.add('active');
+  } else if (tabName === 'workouts') {
+    document.getElementById('workoutsTab').classList.add('active');
+    buttons[1].classList.add('active');
+    loadWorkoutSummaries();
+  }
+}
+
+// Load and display workout summaries
+async function loadWorkoutSummaries() {
+  const listContainer = document.getElementById('workoutSummaryList');
+  if (!listContainer) return;
+  
+  listContainer.innerHTML = '<div class="label" style="text-align: center; margin-bottom: 16px;">Loading workouts...</div>';
+  
+  try {
+    const workouts = await window.getAllWorkoutSummaries();
+    displayWorkoutSummaries(workouts);
+  } catch (error) {
+    console.error('Error loading workouts:', error);
+    listContainer.innerHTML = '<div class="label" style="text-align: center; color: #ff4444;">Error loading workouts</div>';
+  }
+}
+
+// Display workout summaries in the list
+function displayWorkoutSummaries(workouts) {
+  const listContainer = document.getElementById('workoutSummaryList');
+  if (!listContainer) return;
+  
+  if (workouts.length === 0) {
+    listContainer.innerHTML = '<div class="label" style="text-align: center; margin-bottom: 16px;">No workouts recorded yet</div>';
+    return;
+  }
+  
+  listContainer.innerHTML = '';
+  
+  workouts.forEach(workout => {
+    const summary = workout.summary;
+    const workoutItem = document.createElement('div');
+    workoutItem.className = 'workout-item';
+    
+    const date = new Date(summary.startedAt);
+    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    workoutItem.innerHTML = `
+      <div class="workout-item-header">
+        <div>
+          <div class="workout-item-title">${summary.intent || 'Workout'}</div>
+          <div class="workout-item-date">${dateStr}</div>
+        </div>
+      </div>
+      <div class="workout-item-details">
+        <div class="workout-item-detail">Duration: ${summary.duration_minutes} min</div>
+        <div class="workout-item-detail">Primary Zone: ${summary.primary_zone}</div>
+        <div class="workout-item-detail">Stress: ${summary.stress_profile}</div>
+      </div>
+      <div class="workout-item-actions">
+        <button class="button" onclick="viewWorkoutSummary('${summary.external_session_id}')">View</button>
+        <button class="button secondary" onclick="downloadWorkoutJson('${summary.external_session_id}')">Download JSON</button>
+      </div>
+    `;
+    
+    listContainer.appendChild(workoutItem);
+  });
+}
+
+// View workout summary in modal
+let currentWorkoutSummary = null;
+
+function viewWorkoutSummary(sessionId) {
+  // Find workout in IndexedDB
+  window.initDB().then(db => {
+    const transaction = db.transaction(['workouts'], 'readonly');
+    const store = transaction.objectStore('workouts');
+    const request = store.get(sessionId);
+    
+    request.onsuccess = () => {
+      const workout = request.result;
+      if (workout && workout.summary) {
+        const summaryForEmission = { ...workout.summary };
+        delete summaryForEmission.day;
+        showWorkoutSummaryModal(summaryForEmission);
+      }
+    };
+  });
+}
+
+// Show workout summary modal
+function showWorkoutSummaryModal(summary) {
+  currentWorkoutSummary = summary;
+  const jsonElement = document.getElementById('workoutSummaryJson');
+  if (jsonElement) {
+    jsonElement.textContent = JSON.stringify(summary, null, 2);
+  }
+  document.getElementById('workoutSummaryModalBg').style.display = 'flex';
+}
+
+// Close workout summary modal
+function closeWorkoutSummaryModal() {
+  document.getElementById('workoutSummaryModalBg').style.display = 'none';
+  currentWorkoutSummary = null;
+}
+
+// Download workout summary as JSON
+function downloadWorkoutSummaryJson() {
+  if (!currentWorkoutSummary) return;
+  downloadWorkoutJson(currentWorkoutSummary.external_session_id);
+}
+
+// Download specific workout JSON
+function downloadWorkoutJson(sessionId) {
+  window.initDB().then(db => {
+    const transaction = db.transaction(['workouts'], 'readonly');
+    const store = transaction.objectStore('workouts');
+    const request = store.get(sessionId);
+    
+    request.onsuccess = () => {
+      const workout = request.result;
+      if (workout && workout.summary) {
+        const summaryForEmission = { ...workout.summary };
+        delete summaryForEmission.day;
+        
+        const jsonStr = JSON.stringify(summaryForEmission, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `workout-${summaryForEmission.external_session_id}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    };
+  });
+}
+
+// Expose functions globally
+window.switchTab = switchTab;
+window.loadWorkoutSummaries = loadWorkoutSummaries;
+window.viewWorkoutSummary = viewWorkoutSummary;
+window.showWorkoutSummaryModal = showWorkoutSummaryModal;
+window.closeWorkoutSummaryModal = closeWorkoutSummaryModal;
+window.downloadWorkoutSummaryJson = downloadWorkoutSummaryJson;
+window.downloadWorkoutJson = downloadWorkoutJson;
