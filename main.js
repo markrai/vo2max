@@ -37,3 +37,10 @@ loadProfile();
   setInterval(updateDisplay, 1000);
 })();
 
+// Set app version display
+if (typeof window.APP_VERSION !== 'undefined') {
+  const versionEl = document.getElementById('appVersion');
+  if (versionEl) {
+    versionEl.textContent = 'v' + window.APP_VERSION;
+  }
+}

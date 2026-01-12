@@ -3,28 +3,46 @@
 // Service Worker Registration and Update Management
 let serviceWorkerRegistration = null;
 let updateAvailable = false;
+let updateNotificationShown = false;
 
-// Register Service Worker with cache-busting
+// Register Service Worker (without cache-busting on initial load to avoid loops)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Register with cache-busting query param to ensure we get latest SW
-    navigator.serviceWorker.register('/sw.js?v=' + Date.now())
+    navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         serviceWorkerRegistration = registration;
         console.log('ServiceWorker registration successful:', registration.scope);
         
-        // Check for updates immediately
-        registration.update();
+        // Check if there's a waiting service worker
+        // Only show if we haven't just applied an update
+        if (registration.waiting && !sessionStorage.getItem('updateApplied')) {
+          // Service worker is waiting, show notification
+          updateAvailable = true;
+          showUpdateNotification();
+        } else if (sessionStorage.getItem('updateApplied')) {
+          // Update was just applied, clear the flag
+          sessionStorage.removeItem('updateApplied');
+        }
         
         // Listen for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
+          if (!newWorker) return;
+          
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New service worker available, prompt user to refresh
-              console.log('New service worker available');
-              updateAvailable = true;
-              showUpdateNotification();
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // New service worker available, prompt user to refresh
+                console.log('New service worker available');
+                updateAvailable = true;
+                // Only show if we haven't shown it already
+                if (!updateNotificationShown) {
+                  showUpdateNotification();
+                }
+              } else {
+                // First time installation, no need to show update notification
+                console.log('Service worker installed for the first time');
+              }
             }
           });
         });
@@ -42,10 +60,13 @@ if ('serviceWorker' in navigator) {
 
 // Show update notification banner
 function showUpdateNotification() {
-  // Don't show if already showing
-  if (document.getElementById('updateNotification')) {
+  // Don't show if already showing or already shown
+  if (document.getElementById('updateNotification') || updateNotificationShown) {
     return;
   }
+  
+  // Mark as shown to prevent duplicates
+  updateNotificationShown = true;
   
   const notification = document.createElement('div');
   notification.id = 'updateNotification';
@@ -93,10 +114,24 @@ function showUpdateNotification() {
 
 // Reload page to activate new service worker
 function reloadForUpdate() {
+  // Remove notification before reload
+  const notification = document.getElementById('updateNotification');
+  if (notification) {
+    notification.remove();
+  }
+  
+  // Send skip waiting message to service worker
   if (serviceWorkerRegistration && serviceWorkerRegistration.waiting) {
     serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
   }
-  window.location.reload();
+  
+  // Store flag to prevent showing notification again after reload
+  sessionStorage.setItem('updateApplied', 'true');
+  
+  // Small delay to ensure message is sent, then reload
+  setTimeout(() => {
+    window.location.reload(true);
+  }, 100);
 }
 
 // Dismiss update notification
@@ -105,6 +140,8 @@ function dismissUpdateNotification() {
   if (notification) {
     notification.remove();
   }
+  // Reset flag so it can show again later if needed
+  updateNotificationShown = false;
 }
 
 // Make functions globally accessible
