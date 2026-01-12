@@ -1,28 +1,115 @@
 // PWA Installation and Service Worker Registration
 
-// Register Service Worker
+// Service Worker Registration and Update Management
+let serviceWorkerRegistration = null;
+let updateAvailable = false;
+
+// Register Service Worker with cache-busting
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    // Register with cache-busting query param to ensure we get latest SW
+    navigator.serviceWorker.register('/sw.js?v=' + Date.now())
       .then((registration) => {
+        serviceWorkerRegistration = registration;
         console.log('ServiceWorker registration successful:', registration.scope);
         
-        // Check for updates
+        // Check for updates immediately
+        registration.update();
+        
+        // Listen for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New service worker available, prompt user to refresh
               console.log('New service worker available');
+              updateAvailable = true;
+              showUpdateNotification();
             }
           });
         });
+        
+        // Periodic update check (every 5 minutes)
+        setInterval(() => {
+          registration.update();
+        }, 5 * 60 * 1000);
       })
       .catch((error) => {
         console.log('ServiceWorker registration failed:', error);
       });
   });
 }
+
+// Show update notification banner
+function showUpdateNotification() {
+  // Don't show if already showing
+  if (document.getElementById('updateNotification')) {
+    return;
+  }
+  
+  const notification = document.createElement('div');
+  notification.id = 'updateNotification';
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3d7cff;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    max-width: 90%;
+  `;
+  notification.innerHTML = `
+    <span>New version available!</span>
+    <button onclick="reloadForUpdate()" style="
+      background: white;
+      color: #3d7cff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    ">Update Now</button>
+    <button onclick="dismissUpdateNotification()" style="
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    ">Later</button>
+  `;
+  document.body.appendChild(notification);
+}
+
+// Reload page to activate new service worker
+function reloadForUpdate() {
+  if (serviceWorkerRegistration && serviceWorkerRegistration.waiting) {
+    serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+  window.location.reload();
+}
+
+// Dismiss update notification
+function dismissUpdateNotification() {
+  const notification = document.getElementById('updateNotification');
+  if (notification) {
+    notification.remove();
+  }
+}
+
+// Make functions globally accessible
+window.reloadForUpdate = reloadForUpdate;
+window.dismissUpdateNotification = dismissUpdateNotification;
 
 // PWA Installation Prompt
 let deferredPrompt;
