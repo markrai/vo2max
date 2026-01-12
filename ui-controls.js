@@ -53,9 +53,29 @@ const PHASE_STYLE_MAP = {
 const DEFAULT_PHASE_STYLE = { stroke: "#3d7cff", background: "#232323", text: "#fff" };
 
 let phaseDisplayEl;
+let settingsModalEscHandler = null;
 
-function openModal() { document.getElementById('modalBg').style.display = "flex"; }
-function closeModal() { document.getElementById('modalBg').style.display = "none"; }
+function openModal() { 
+  document.getElementById('modalBg').style.display = "flex";
+  
+  // Add ESC key handler to close the modal
+  settingsModalEscHandler = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      closeModal();
+    }
+  };
+  document.addEventListener('keydown', settingsModalEscHandler);
+}
+
+function closeModal() { 
+  document.getElementById('modalBg').style.display = "none";
+  
+  // Remove ESC key handler
+  if (settingsModalEscHandler) {
+    document.removeEventListener('keydown', settingsModalEscHandler);
+    settingsModalEscHandler = null;
+  }
+}
 function openCancelModal() { document.getElementById('cancelModalBg').style.display = "flex"; }
 function closeCancelModal() { document.getElementById('cancelModalBg').style.display = "none"; }
 
@@ -75,14 +95,7 @@ function applyPhaseStyle(key) {
   }
 }
 
-function saveHRV() {
-  const hrv = document.getElementById('hrvInput').value;
-  if (!hrv) return;
-  const key = "hrv_" + new Date().toDateString();
-  localStorage.setItem(key, hrv);
-  document.getElementById('hrvSection').style.display = "none";
-  updateDisplay();
-}
+// saveHRV() removed - HRV will be handled via SISU sync in the future
 
 function updateDisplay() {
   const day = getSelectedDay();
@@ -124,8 +137,7 @@ function updateDisplay() {
     activityIcon.style.display = "none";
   }
 
-  const hrv = getTodayHRV();
-  if (hrv) document.getElementById('hrvSection').style.display = "none";
+  // HRV handling removed - will be managed via SISU sync
 
   const hrTargetEl = document.getElementById('hrTarget');
 
@@ -146,7 +158,8 @@ function updateDisplay() {
     return;
   }
 
-  const blocks = adjustedBlockLengths(base, hrv);
+  // Use base workout plan directly (HRV adjustments will come from SISU sync in the future)
+  const blocks = adjustedBlockLengths(base, null);
   document.getElementById('workoutBlocks').textContent =
     "Warm-Up: " + blocks.warm + " min · Sustain: " + blocks.sustain + " min · Cool-Down: " + blocks.cool + " min";
 
@@ -451,6 +464,8 @@ function switchTab(tabName) {
   // Hide all tabs
   document.getElementById('personalTab').classList.remove('active');
   document.getElementById('workoutsTab').classList.remove('active');
+  document.getElementById('sisuTab').classList.remove('active');
+  document.getElementById('installTab').classList.remove('active');
   
   // Remove active class from all buttons
   const buttons = document.querySelectorAll('.tab-button');
@@ -464,6 +479,13 @@ function switchTab(tabName) {
     document.getElementById('workoutsTab').classList.add('active');
     buttons[1].classList.add('active');
     loadWorkoutSummaries();
+  } else if (tabName === 'sisu') {
+    document.getElementById('sisuTab').classList.add('active');
+    buttons[2].classList.add('active');
+    updateSISUStatus();
+  } else if (tabName === 'install') {
+    document.getElementById('installTab').classList.add('active');
+    buttons[3].classList.add('active');
   }
 }
 

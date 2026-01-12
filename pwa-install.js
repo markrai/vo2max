@@ -27,6 +27,7 @@ if ('serviceWorker' in navigator) {
 // PWA Installation Prompt
 let deferredPrompt;
 let installButton = null;
+let installPromptEscHandler = null;
 
 // Create install button if not already installed
 function createInstallButton() {
@@ -34,6 +35,12 @@ function createInstallButton() {
   if (window.matchMedia('(display-mode: standalone)').matches || 
       window.navigator.standalone === true) {
     return; // Already installed
+  }
+
+  // Check if button already exists
+  if (document.getElementById('installButton')) {
+    installButton = document.getElementById('installButton');
+    return;
   }
 
   // Create install button
@@ -44,20 +51,11 @@ function createInstallButton() {
   button.style.display = 'none';
   button.onclick = installPWA;
   
-  // Add to settings modal
-  const settingsModal = document.getElementById('modalBg');
-  if (settingsModal) {
-    const modalContent = settingsModal.querySelector('.modal');
-    if (modalContent) {
-      const connectHrSection = modalContent.querySelector('#connectHrButton')?.parentElement;
-      if (connectHrSection) {
-        const installSection = document.createElement('div');
-        installSection.className = 'modal-section';
-        installSection.appendChild(button);
-        connectHrSection.parentNode.insertBefore(installSection, connectHrSection.nextSibling);
-        installButton = button;
-      }
-    }
+  // Add to Install tab container
+  const installContainer = document.getElementById('installButtonContainer');
+  if (installContainer) {
+    installContainer.appendChild(button);
+    installButton = button;
   }
 }
 
@@ -125,6 +123,14 @@ function showInstallPrompt() {
     `;
     document.body.appendChild(promptModal);
     
+    // Add ESC key handler to close the modal
+    installPromptEscHandler = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        closeInstallPrompt();
+      }
+    };
+    document.addEventListener('keydown', installPromptEscHandler);
+    
     // Store prompt state in localStorage to avoid showing too frequently
     localStorage.setItem('installPromptShown', Date.now().toString());
   }
@@ -136,6 +142,11 @@ function closeInstallPrompt() {
   if (promptModal) {
     promptModal.style.display = 'none';
     promptModal.remove();
+  }
+  // Remove ESC key handler
+  if (installPromptEscHandler) {
+    document.removeEventListener('keydown', installPromptEscHandler);
+    installPromptEscHandler = null;
   }
 }
 

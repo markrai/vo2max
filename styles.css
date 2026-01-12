@@ -50,11 +50,17 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
 .tab-button { flex: 1; padding: 12px; background: transparent; border: none; color: #888; font-size: 1rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; }
 .tab-button:hover { color: #fff; }
 .tab-button.active { color: #3d7cff; border-bottom-color: #3d7cff; }
-.tab-content { display: none; }
+.tab-content { display: none; min-height: 400px; }
 .tab-content.active { display: block; }
 
 /* Workout summary list */
-.workout-summary-list { max-height: 60vh; overflow-y: auto; }
+.workout-summary-list { max-height: 60vh; overflow-y: auto; min-height: 350px; }
+
+/* Sync content */
+.sisu-sync-content { min-height: 350px; }
+
+/* Install content */
+.install-content { min-height: 350px; }
 .workout-item { background: #232323; padding: 16px; border-radius: 10px; margin-bottom: 12px; }
 .workout-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .workout-item-date { font-size: 0.9rem; opacity: 0.7; }
@@ -87,15 +93,22 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   justify-content: center;
 }
 
-#heartIcon {
+/* Heart container - anchors heart, BPM, and range together */
+.heart-container {
   position: absolute;
   left: calc(50% - 12.5rem);
   top: 50%;
+  transform: translate(-50%, -50%);
   width: 5rem;
   height: 5rem;
+}
+
+#heartIcon {
+  position: relative;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);
-  transform: translate(-50%, -50%);
   animation: heartPulse 1s ease-in-out infinite;
   transform-origin: center center;
 }
@@ -115,17 +128,10 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   transform-origin: center center;
 }
 
-#hrTarget {
-  position: absolute;
-  left: calc(50% - 12.5rem);
-  top: calc(50% + 3.125rem);
-  transform: translateX(-50%);
-  text-align: center;
-}
-
+/* BPM value - centered within heart icon */
 #hrNow {
   position: absolute;
-  left: calc(50% - 12.5rem);
+  left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
@@ -134,6 +140,19 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   font-size: 1.2rem;
   pointer-events: none;
   z-index: 10;
+  width: 100%;
+}
+
+/* HR range - directly below heart icon */
+#hrTarget {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  opacity: 0.9;
 }
 
 /* Mobile view - optimize for tall screens like Pixel 8 (1080x2400) */
@@ -210,17 +229,22 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     padding-bottom: 4rem;
   }
   
-  /* Reposition heart icon to bottom left of section - aligned baseline */
-  #heartIcon {
+  /* Reposition heart container to bottom left of section - aligned baseline */
+  .heart-container {
     position: absolute !important;
     left: 1.5rem !important;
     bottom: 1.5rem !important;
     top: auto !important;
     width: 4rem !important;
     height: 4rem !important;
-    max-width: 4rem !important;
-    max-height: 4rem !important;
     transform: translateY(50%) !important;
+  }
+  
+  #heartIcon {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: none !important;
     transform-origin: center bottom !important;
     object-fit: contain !important;
     object-position: center bottom !important;
@@ -244,36 +268,34 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     object-position: center bottom !important;
   }
   
-  /* Reposition HR target below heart icon - larger text */
-  #hrTarget {
-    position: absolute !important;
-    left: 1.5rem !important;
-    bottom: -0.5rem !important;
-    top: auto !important;
-    transform: none !important;
-    font-size: 0.75rem !important;
-    text-align: left !important;
-  }
-  
-  /* HR Now display - larger and better positioned */
+  /* HR Now display - centered within heart icon */
   #hrNow {
     position: absolute !important;
-    left: 3.5rem !important;
-    bottom: calc(1.5rem + 2rem + 0.5rem) !important;
-    top: auto !important;
-    transform: translateX(-50%) !important;
+    left: 50% !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
     font-size: 1.2rem !important;
     text-align: center !important;
     color: white !important;
     font-weight: 600 !important;
     pointer-events: none !important;
     z-index: 10 !important;
+    width: 100% !important;
   }
   
-  /* Increase HRV section spacing */
-  #hrvSection {
-    margin-bottom: 24px;
+  /* HR target below heart icon - anchored to heart container */
+  #hrTarget {
+    position: absolute !important;
+    left: 50% !important;
+    top: 100% !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    margin-top: 0.5rem !important;
   }
+  
   
   /* Optimize modals for mobile */
   .modal {
@@ -334,10 +356,15 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   .ring-bg { stroke-width: 9.6; }
   .ring-progress { stroke-width: 9.6; }
   .ring-center { font-size: 1.32rem; }
-  #heartIcon { 
+  .heart-container {
     left: calc(50% - 15rem) !important;
     width: 6rem !important;
     height: 6rem !important;
+  }
+  
+  #heartIcon { 
+    width: 100% !important;
+    height: 100% !important;
   }
   #activityIcon { 
     left: calc(50% + 15rem) !important;
@@ -350,12 +377,7 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     transform: translate(-50%, -50%) !important;
     transform-origin: center center !important;
   }
-  #hrTarget {
-    left: calc(50% - 15rem) !important;
-    top: calc(50% + 3.75rem) !important;
-  }
   #hrNow {
-    left: calc(50% - 15rem) !important;
     font-size: 1.44rem !important;
   }
 }

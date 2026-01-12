@@ -95,15 +95,17 @@ function formatTime(sec) {
   return m + "m " + s + "s";
 }
 
+// HRV functions - reserved for future SISU sync integration
+// getTodayHRV() and adjustedBlockLengths() will be implemented via SISU API
 function getTodayHRV() {
-  const key = "hrv_" + new Date().toDateString();
-  return localStorage.getItem(key);
+  // Future: Get HRV from SISU sync
+  // For now, return null to use base workout plan
+  return null;
 }
 
 function adjustedBlockLengths(base, hrv) {
-  if (!hrv) return base;
-  if (hrv < 40) return { warm: base.warm + 3, sustain: Math.max(10, base.sustain - 5), cool: base.cool + 2 };
-  if (hrv > 60) return { warm: base.warm, sustain: base.sustain + 5, cool: base.cool };
+  // Future: Adjust based on HRV baseline from SISU
+  // For now, return base workout plan without adjustments
   return base;
 }
 

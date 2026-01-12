@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VO2 Coach">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -24,11 +25,13 @@
     
     <!-- Tab buttons -->
     <div class="tab-buttons">
-      <button class="tab-button active" onclick="switchTab('personal')">Personal Metrics</button>
-      <button class="tab-button" onclick="switchTab('workouts')">Workout Summary</button>
+      <button class="tab-button active" onclick="switchTab('personal')">Profile</button>
+      <button class="tab-button" onclick="switchTab('workouts')">Workouts</button>
+      <button class="tab-button" onclick="switchTab('sisu')">Sync</button>
+      <button class="tab-button" onclick="switchTab('install')">Install</button>
     </div>
     
-    <!-- Personal Metrics Tab -->
+    <!-- Profile Tab -->
     <div id="personalTab" class="tab-content active">
       <div class="modal-section">
         <div class="modal-field">
@@ -88,17 +91,47 @@
         </div>
       </div>
 
-      <div class="modal-section">
-        <button class="button" id="connectHrButton" onclick="connectHr()">Connect HR</button>
-      </div>
-
       <button class="button" onclick="saveProfile()">Save Profile</button>
     </div>
     
-    <!-- Workout Summary Tab -->
+    <!-- Workouts Tab -->
     <div id="workoutsTab" class="tab-content">
       <div id="workoutSummaryList" class="workout-summary-list">
         <div class="label" style="text-align: center; margin-bottom: 16px;">Loading workouts...</div>
+      </div>
+    </div>
+    
+    <!-- Sync Tab -->
+    <div id="sisuTab" class="tab-content">
+      <div id="sisuSyncContent" class="sisu-sync-content">
+        <div class="label" style="text-align: center; margin-bottom: 16px;">Sync</div>
+        <div class="modal-section">
+          <div class="label" style="text-align: center; opacity: 0.7; margin-bottom: 20px;">
+            Connect to SISU to sync HRV baseline and adjust workouts automatically.
+          </div>
+          <div id="sisuStatus" class="label" style="text-align: center; margin-bottom: 16px;">Not connected</div>
+          <button class="button" id="sisuConnectButton" onclick="connectSISU()">Connect to SISU</button>
+        </div>
+        
+        <div class="modal-section" style="margin-top: 24px;">
+          <div class="label" style="text-align: center; opacity: 0.7; margin-bottom: 16px;">
+            Heart Rate Monitor
+          </div>
+          <button class="button" id="connectHrButton" onclick="connectHr()">Connect HR</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Install Tab -->
+    <div id="installTab" class="tab-content">
+      <div id="installContent" class="install-content">
+        <div class="label" style="text-align: center; margin-bottom: 16px;">Install App</div>
+        <div class="modal-section">
+          <div class="label" style="text-align: center; opacity: 0.7; margin-bottom: 20px;">
+            Install this app on your device for a better experience and offline access.
+          </div>
+          <div id="installButtonContainer"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -132,12 +165,6 @@
 
 <div class="container">
 
-<div class="section" id="hrvSection">
-  <div class="label">HRV (ms)</div>
-  <input id="hrvInput" class="input" type="number" placeholder="Enter HRV for today">
-  <button class="button" onclick="saveHRV()">Save HRV</button>
-</div>
-
 <div class="section workout-main-section">
   <div style="position: relative;">
     <div id="dayDisplay" class="metric"></div>
@@ -157,9 +184,11 @@
       <div class="ring-center" id="ringCenterText"></div>
     </div>
 
-    <img id="heartIcon" src="heart.png" alt="">
-    <div id="hrTarget" class="hr-target"></div>
-    <div id="hrNow" class="hr-now"></div>
+    <div id="heartContainer" class="heart-container">
+      <img id="heartIcon" src="heart.png" alt="">
+      <div id="hrNow" class="hr-now"></div>
+      <div id="hrTarget" class="hr-target"></div>
+    </div>
     <img id="activityIcon" src="" alt="" style="display: none;">
   </div>
 </div>
@@ -175,6 +204,7 @@
 <script src="workout-data.js"></script>
 <script src="workout-logic.js"></script>
 <script src="profile.js"></script>
+<script src="sisu-sync.js"></script>
 <script src="ui-controls.js"></script>
 <script src="main.js"></script>
 <script src="pwa-install.js"></script>
