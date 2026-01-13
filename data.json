@@ -3,7 +3,7 @@
     {
       "day": "Monday",
       "type": "VO2 Intervals (10×1)",
-      "intent": "vo2_short_intervals_primer",
+      "intent": "vo2_primer",
       "machine": "Bike",
       "warmup": {
         "duration_min": 12,
@@ -32,7 +32,7 @@
     {
       "day": "Tuesday",
       "type": "Zone 2",
-      "intent": "zone2_endurance",
+      "intent": "aerobic_base",
       "machine": "Elliptical",
       "warmup": {
         "duration_min": 8,
@@ -50,7 +50,7 @@
     {
       "day": "Wednesday",
       "type": "Strength",
-      "intent": "strength_low_fatigue",
+      "intent": "support_strength",
       "machine": "Combo Machine",
       "warmup": {
         "duration_min": 5,
@@ -68,7 +68,7 @@
     {
       "day": "Thursday",
       "type": "Threshold",
-      "intent": "threshold_intervals",
+      "intent": "threshold",
       "machine": "Bike",
       "warmup": {
         "duration_min": 10,
@@ -89,7 +89,7 @@
         {
           "id": "A",
           "type": "4×4 Intervals (Long)",
-          "intent": "vo2_long_intervals_4x4",
+          "intent": "vo2_priority",
           "machine": "Bike",
           "warmup": {
             "duration_min": 12,
@@ -173,7 +173,7 @@
         {
           "id": "B",
           "type": "8×2 Intervals (Short)",
-          "intent": "vo2_short_intervals_primer",
+          "intent": "vo2_primer",
           "machine": "Bike",
           "warmup": {
             "duration_min": 10,
@@ -220,7 +220,7 @@
     {
       "day": "Saturday",
       "type": "Long Zone 2",
-      "intent": "zone2_long",
+      "intent": "aerobic_volume",
       "machine": "Elliptical or Bike",
       "warmup": {
         "duration_min": 10,
