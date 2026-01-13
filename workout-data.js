@@ -17,6 +17,117 @@ function parseDuration(duration) {
   return 0;
 }
 
+// Get selected variant for a day (week-based automatic selection)
+function getSelectedVariant(day, variants) {
+  if (!variants || !Array.isArray(variants) || variants.length === 0) {
+    return null;
+  }
+  
+  // Calculate week number (weeks since epoch, alternating A/B)
+  // Using a fixed epoch date for consistency (e.g., Jan 1, 2024)
+  const epoch = new Date('2024-01-01').getTime();
+  const now = Date.now();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weekNumber = Math.floor((now - epoch) / msPerWeek);
+  const variantIndex = weekNumber % variants.length;
+  
+  // Get variant by index (A=0, B=1, etc.)
+  const selectedVariant = variants[variantIndex];
+  console.log(`Week ${weekNumber}: Selected variant ${selectedVariant.id} for ${day}`);
+  
+  return selectedVariant;
+}
+
+// Process a single workout (used for both regular workouts and variants)
+function processWorkout(workout, transformed) {
+  if (!workout || !workout.day) {
+    return;
+  }
+  
+  const warm = parseDuration(workout.warmup?.duration_min || 0);
+  const cool = parseDuration(workout.cooldown?.duration_min || 0);
+  
+  // Store HR targets
+  hrTargets[workout.day] = {
+    warmup: workout.warmup?.target_hr_bpm || "",
+    warmup_subsections: workout.warmup?.subsections || null,
+    cooldown: workout.cooldown?.target_hr_bpm || "",
+    main_set: workout.main_set?.target_hr_bpm || "",
+    intervals: null // Will be populated for interval workouts
+  };
+  
+  // Calculate sustain duration from main_set
+  let sustain = 0;
+  if (workout.main_set) {
+    if (workout.main_set.duration_min) {
+      // Simple duration
+      sustain = parseDuration(workout.main_set.duration_min);
+    } else if (workout.main_set.intervals && Array.isArray(workout.main_set.intervals)) {
+      // Interval-based workout
+      const intervals = workout.main_set.intervals;
+      
+      // Check if this is a sequence (explicitly marked) or repeating pattern
+      const isSequence = workout.main_set.is_sequence === true;
+      
+      let totalDuration = 0;
+      const intervalPhases = [];
+      
+      intervals.forEach(interval => {
+        // All durations are now in minutes (normalized)
+        let intervalDuration = 0;
+        if (interval.duration_min) {
+          intervalDuration = parseDuration(interval.duration_min);
+        }
+        totalDuration += intervalDuration;
+        
+        // Store interval phase info for HR targets
+        intervalPhases.push({
+          phase: interval.phase,
+          duration: intervalDuration,
+          target_hr_bpm: interval.target_hr_bpm || ""
+        });
+      });
+      
+      if (isSequence) {
+        // For sequences (like Friday), use total duration
+        // All phases are already in the array, no repetition needed
+        sustain = totalDuration;
+        hrTargets[workout.day].intervals = {
+          phases: intervalPhases,
+          repetitions: 1, // Sequences don't repeat
+          isSequence: true
+        };
+      } else {
+        // For repeating patterns (like Monday), use explicit repetitions field
+        const repetitions = workout.main_set.repetitions || 1;
+        
+        // For repeating patterns, the intervals array contains one cycle
+        // Multiply by repetitions to get total duration
+        sustain = totalDuration * repetitions;
+        
+        hrTargets[workout.day].intervals = {
+          phases: intervalPhases,
+          repetitions: repetitions,
+          isSequence: false
+        };
+      }
+    }
+  }
+  
+  // Only add to transformed if we have valid workout data
+  if (warm > 0 || sustain > 0 || cool > 0) {
+    transformed[workout.day] = { warm, sustain, cool };
+    // Store metadata (type, intent, and machine) for display
+    workoutMetadata[workout.day] = {
+      type: workout.type || "",
+      intent: workout.intent || "",
+      machine: workout.machine || ""
+    };
+  } else {
+    transformed[workout.day] = null;
+  }
+}
+
 // Transform workout data structure to the format expected by the app
 function transformWorkoutData(workoutData) {
   const transformed = {};
@@ -31,86 +142,21 @@ function transformWorkoutData(workoutData) {
       return;
     }
     
-    const warm = parseDuration(workout.warmup?.duration_min || 0);
-    const cool = parseDuration(workout.cooldown?.duration_min || 0);
-    
-    // Store HR targets
-    hrTargets[workout.day] = {
-      warmup: workout.warmup?.target_hr_bpm || "",
-      warmup_subsections: workout.warmup?.subsections || null,
-      cooldown: workout.cooldown?.target_hr_bpm || "",
-      main_set: workout.main_set?.target_hr_bpm || "",
-      intervals: null // Will be populated for interval workouts
-    };
-    
-    // Calculate sustain duration from main_set
-    let sustain = 0;
-    if (workout.main_set) {
-      if (workout.main_set.duration_min) {
-        // Simple duration
-        sustain = parseDuration(workout.main_set.duration_min);
-      } else if (workout.main_set.intervals && Array.isArray(workout.main_set.intervals)) {
-        // Interval-based workout
-        const intervals = workout.main_set.intervals;
-        
-        // Check if this is a sequence (explicitly marked) or repeating pattern
-        const isSequence = workout.main_set.is_sequence === true;
-        
-        let totalDuration = 0;
-        const intervalPhases = [];
-        
-        intervals.forEach(interval => {
-          // All durations are now in minutes (normalized)
-          let intervalDuration = 0;
-          if (interval.duration_min) {
-            intervalDuration = parseDuration(interval.duration_min);
-          }
-          totalDuration += intervalDuration;
-          
-          // Store interval phase info for HR targets
-          intervalPhases.push({
-            phase: interval.phase,
-            duration: intervalDuration,
-            target_hr_bpm: interval.target_hr_bpm || ""
-          });
-        });
-        
-        if (isSequence) {
-          // For sequences (like Friday), use total duration
-          // All phases are already in the array, no repetition needed
-          sustain = totalDuration;
-          hrTargets[workout.day].intervals = {
-            phases: intervalPhases,
-            repetitions: 1, // Sequences don't repeat
-            isSequence: true
-          };
-        } else {
-          // For repeating patterns (like Monday), use explicit repetitions field
-          const repetitions = workout.main_set.repetitions || 1;
-          
-          // For repeating patterns, the intervals array contains one cycle
-          // Multiply by repetitions to get total duration
-          sustain = totalDuration * repetitions;
-          
-          hrTargets[workout.day].intervals = {
-            phases: intervalPhases,
-            repetitions: repetitions,
-            isSequence: false
-          };
-        }
+    // Check if this day has variants
+    if (workout.variants && Array.isArray(workout.variants) && workout.variants.length > 0) {
+      // Get selected variant based on week number
+      const selectedVariant = getSelectedVariant(workout.day, workout.variants);
+      if (selectedVariant) {
+        // Process the selected variant as a normal workout
+        const variantWorkout = {
+          ...selectedVariant,
+          day: workout.day
+        };
+        processWorkout(variantWorkout, transformed);
       }
-    }
-    
-    // Only add to transformed if we have valid workout data
-    if (warm > 0 || sustain > 0 || cool > 0) {
-      transformed[workout.day] = { warm, sustain, cool };
-      // Store metadata (type and machine) for display
-      workoutMetadata[workout.day] = {
-        type: workout.type || "",
-        machine: workout.machine || ""
-      };
     } else {
-      transformed[workout.day] = null;
+      // Single workout (existing behavior - backward compatible)
+      processWorkout(workout, transformed);
     }
   });
   

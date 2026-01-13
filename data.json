@@ -3,6 +3,7 @@
     {
       "day": "Monday",
       "type": "VO2 Intervals (10×1)",
+      "intent": "vo2_short_intervals_primer",
       "machine": "Bike",
       "warmup": {
         "duration_min": 12,
@@ -31,6 +32,7 @@
     {
       "day": "Tuesday",
       "type": "Zone 2",
+      "intent": "zone2_endurance",
       "machine": "Elliptical",
       "warmup": {
         "duration_min": 8,
@@ -48,6 +50,7 @@
     {
       "day": "Wednesday",
       "type": "Strength",
+      "intent": "strength_low_fatigue",
       "machine": "Combo Machine",
       "warmup": {
         "duration_min": 5,
@@ -65,6 +68,7 @@
     {
       "day": "Thursday",
       "type": "Threshold",
+      "intent": "threshold_intervals",
       "machine": "Bike",
       "warmup": {
         "duration_min": 10,
@@ -81,97 +85,149 @@
     },
     {
       "day": "Friday",
-      "type": "4×4 Intervals",
-      "machine": "Bike",
-      "warmup": {
-        "duration_min": 12,
-        "target_hr_bpm": "105 → 150",
-        "subsections": [
-          {
-            "name": "Very Easy",
-            "start_min": 0,
-            "end_min": 3,
-            "target_hr_bpm": "105–120",
-            "notes": "Light pedals. No tension in chest or legs."
+      "variants": [
+        {
+          "id": "A",
+          "type": "4×4 Intervals (Long)",
+          "intent": "vo2_long_intervals_4x4",
+          "machine": "Bike",
+          "warmup": {
+            "duration_min": 12,
+            "target_hr_bpm": "105 → 150",
+            "subsections": [
+              {
+                "name": "Very Easy",
+                "start_min": 0,
+                "end_min": 3,
+                "target_hr_bpm": "105–120",
+                "notes": "Light pedals. No tension in chest or legs."
+              },
+              {
+                "name": "Easy Steady",
+                "start_min": 3,
+                "end_min": 6,
+                "target_hr_bpm": "120–130",
+                "notes": "Start breathing rhythmically. Smooth, even cadence."
+              },
+              {
+                "name": "Moderate Build",
+                "start_min": 6,
+                "end_min": 9,
+                "target_hr_bpm": "130–140",
+                "notes": "Increase cadence + slight resistance. Let legs warm, don't force it."
+              },
+              {
+                "name": "Controlled Pre-Load",
+                "start_min": 9,
+                "end_min": 12,
+                "target_hr_bpm": "140–150",
+                "notes": "Think \"sustainably firm, not hard\". This primes your HR response for rep #1."
+              }
+            ]
           },
-          {
-            "name": "Easy Steady",
-            "start_min": 3,
-            "end_min": 6,
-            "target_hr_bpm": "120–130",
-            "notes": "Start breathing rhythmically. Smooth, even cadence."
+          "main_set": {
+            "is_sequence": true,
+            "intervals": [
+              {
+                "phase": "Interval 1",
+                "duration_min": 4,
+                "target_hr_bpm": "158–162"
+              },
+              {
+                "phase": "Recovery 1",
+                "duration_min": 3,
+                "target_hr_bpm": "120–135"
+              },
+              {
+                "phase": "Interval 2",
+                "duration_min": 4,
+                "target_hr_bpm": "160–165"
+              },
+              {
+                "phase": "Recovery 2",
+                "duration_min": 3,
+                "target_hr_bpm": "120–135"
+              },
+              {
+                "phase": "Interval 3",
+                "duration_min": 4,
+                "target_hr_bpm": "165–170"
+              },
+              {
+                "phase": "Recovery 3",
+                "duration_min": 3,
+                "target_hr_bpm": "120–135"
+              },
+              {
+                "phase": "Interval 4",
+                "duration_min": 4,
+                "target_hr_bpm": "168–172"
+              }
+            ]
           },
-          {
-            "name": "Moderate Build",
-            "start_min": 6,
-            "end_min": 9,
-            "target_hr_bpm": "130–140",
-            "notes": "Increase cadence + slight resistance. Let legs warm, don't force it."
-          },
-          {
-            "name": "Controlled Pre-Load",
-            "start_min": 9,
-            "end_min": 12,
-            "target_hr_bpm": "140–150",
-            "notes": "Think \"sustainably firm, not hard\". This primes your HR response for rep #1."
+          "cooldown": {
+            "duration_min": 5,
+            "target_hr_bpm": "<115"
           }
-        ]
-      },
-      "main_set": {
-        "is_sequence": true,
-        "intervals": [
-          {
-            "phase": "Interval 1",
-            "duration_min": 4,
-            "target_hr_bpm": "158–162"
+        },
+        {
+          "id": "B",
+          "type": "8×2 Intervals (Short)",
+          "intent": "vo2_short_intervals_primer",
+          "machine": "Bike",
+          "warmup": {
+            "duration_min": 10,
+            "target_hr_bpm": "110 → 145",
+            "subsections": [
+              {
+                "name": "Easy Build",
+                "start_min": 0,
+                "end_min": 5,
+                "target_hr_bpm": "110–130",
+                "notes": "Gradual increase in effort."
+              },
+              {
+                "name": "Moderate Pre-Load",
+                "start_min": 5,
+                "end_min": 10,
+                "target_hr_bpm": "130–145",
+                "notes": "Build to threshold, ready for intervals."
+              }
+            ]
           },
-          {
-            "phase": "Recovery 1",
-            "duration_min": 3,
-            "target_hr_bpm": "120–135"
+          "main_set": {
+            "repetitions": 8,
+            "intervals": [
+              {
+                "phase": "hard",
+                "duration_min": 2,
+                "target_hr_bpm": "160–170"
+              },
+              {
+                "phase": "easy",
+                "duration_min": 1,
+                "target_hr_bpm": "120–135"
+              }
+            ]
           },
-          {
-            "phase": "Interval 2",
-            "duration_min": 4,
-            "target_hr_bpm": "160–165"
-          },
-          {
-            "phase": "Recovery 2",
-            "duration_min": 3,
-            "target_hr_bpm": "120–135"
-          },
-          {
-            "phase": "Interval 3",
-            "duration_min": 4,
-            "target_hr_bpm": "165–170"
-          },
-          {
-            "phase": "Recovery 3",
-            "duration_min": 3,
-            "target_hr_bpm": "120–135"
-          },
-          {
-            "phase": "Interval 4",
-            "duration_min": 4,
-            "target_hr_bpm": "168–172"
+          "cooldown": {
+            "duration_min": 5,
+            "target_hr_bpm": "<115"
           }
-        ]
-      },
-      "cooldown": {
-        "duration_min": 5,
-        "target_hr_bpm": "<115"
-      }
+        }
+      ]
     },
     {
       "day": "Saturday",
       "type": "Long Zone 2",
+      "intent": "zone2_long",
       "machine": "Elliptical or Bike",
       "warmup": {
         "duration_min": 10,
         "target_hr_bpm": "110–120"
       },
       "main_set": {
-        "duration_min": "60–75",
+        "duration_min": "90–120",
         "target_hr_bpm": "115–130"
       },
       "cooldown": {
@@ -182,6 +238,7 @@
     {
       "day": "Sunday",
       "type": "Recovery Session",
+      "intent": "recovery",
       "machine": "Bike or Elliptical",
       "warmup": {
         "duration_min": 3,

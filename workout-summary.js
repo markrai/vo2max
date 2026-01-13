@@ -130,12 +130,13 @@ async function generateWorkoutSummary(sessionId, startedAt, endedAt, day) {
   const totalSeconds = Math.floor((endedAt - startedAt) / 1000);
   const durationMinutes = Math.round(totalSeconds / 60);
 
-  // Get intent from workout metadata
+  // Get intent from workout metadata (prefer intent field, fallback to type)
   let intent = 'unknown';
   if (typeof getWorkoutMetadata === 'function') {
     const metadata = getWorkoutMetadata();
-    if (metadata && metadata[day] && metadata[day].type) {
-      intent = metadata[day].type;
+    if (metadata && metadata[day]) {
+      // Use intent field if available, otherwise fall back to type for backward compatibility
+      intent = metadata[day].intent || metadata[day].type || 'unknown';
     }
   }
 
@@ -174,19 +175,12 @@ async function generateWorkoutSummary(sessionId, startedAt, endedAt, day) {
   return summary;
 }
 
-// Emit workout summary (modal + IndexedDB)
+// Emit workout summary (store in IndexedDB only - no automatic modal display)
 async function emitWorkoutSummary(summary) {
-  // Create a copy without the 'day' field for emission
-  const summaryForEmission = { ...summary };
-  delete summaryForEmission.day;
-  
   // Store in IndexedDB (with day field for indexing)
   await window.storeWorkoutSummary(summary);
   
-  // Show modal with summary
-  if (typeof window.showWorkoutSummaryModal === 'function') {
-    window.showWorkoutSummaryModal(summaryForEmission);
-  }
+  // Note: Modal display removed - users can access summaries manually via Settings > Workouts tab
 }
 
 // Expose functions globally
