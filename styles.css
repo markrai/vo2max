@@ -154,6 +154,9 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   margin-top: 0.5rem;
   font-size: 0.7rem;
   opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Mobile view - optimize for tall screens like Pixel 8 (1080x2400) */
@@ -295,6 +298,10 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     font-size: 0.75rem !important;
     text-align: center !important;
     margin-top: 0.5rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 200px !important;
   }
   
   
