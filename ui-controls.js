@@ -662,6 +662,30 @@ function createSwipeHandler(onSwipeLeft) {
   };
 }
 
+// Delete workout confirmation modal
+let pendingDeleteSessionId = null;
+
+function openDeleteWorkoutModal(sessionId) {
+  pendingDeleteSessionId = sessionId;
+  document.getElementById('deleteWorkoutModalBg').style.display = "flex";
+}
+
+function closeDeleteWorkoutModal() {
+  document.getElementById('deleteWorkoutModalBg').style.display = "none";
+  pendingDeleteSessionId = null;
+}
+
+async function confirmDeleteWorkout() {
+  if (pendingDeleteSessionId) {
+    const success = await window.deleteWorkoutSummary(pendingDeleteSessionId);
+    if (success) {
+      // Reload the workout list
+      await loadWorkoutSummaries();
+    }
+    closeDeleteWorkoutModal();
+  }
+}
+
 // Delete workout
 async function deleteWorkout(sessionId) {
   const success = await window.deleteWorkoutSummary(sessionId);
@@ -718,7 +742,10 @@ function displayWorkoutSummaries(workouts) {
       if (sessionId) {
         workoutItem.classList.add('deleting');
         setTimeout(() => {
-          deleteWorkout(sessionId);
+          // Reset the swipe animation
+          workoutItem.classList.remove('deleting');
+          // Show delete confirmation dialog
+          openDeleteWorkoutModal(sessionId);
         }, 300);
       }
     });
