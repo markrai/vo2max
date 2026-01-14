@@ -168,6 +168,26 @@ async function getAllWorkoutSummaries() {
   }
 }
 
+// Delete workout summary and associated HR samples
+async function deleteWorkoutSummary(sessionId) {
+  try {
+    const database = await initDB();
+    
+    // Delete workout summary
+    const workoutTransaction = database.transaction([STORE_WORKOUTS], 'readwrite');
+    const workoutStore = workoutTransaction.objectStore(STORE_WORKOUTS);
+    await workoutStore.delete(sessionId);
+    
+    // Delete associated HR samples
+    await clearHrSamples(sessionId);
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting workout summary:', error);
+    return false;
+  }
+}
+
 // Expose functions globally
 window.initDB = initDB;
 window.storeHrSample = storeHrSample;
@@ -175,3 +195,4 @@ window.getHrSamples = getHrSamples;
 window.storeWorkoutSummary = storeWorkoutSummary;
 window.clearHrSamples = clearHrSamples;
 window.getAllWorkoutSummaries = getAllWorkoutSummaries;
+window.deleteWorkoutSummary = deleteWorkoutSummary;

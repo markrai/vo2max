@@ -505,6 +505,173 @@ async function loadWorkoutSummaries() {
   }
 }
 
+// Swipe handler for workout items
+function createSwipeHandler(onSwipeLeft) {
+  const state = {
+    active: false,
+    pointer: 'none',
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    startT: 0,
+    movedX: 0,
+    movedY: 0,
+    armed: false,
+    swiped: false,
+    targetEl: null
+  };
+
+  const threshold = 72;
+  const velocity = 0.3;
+  const armThreshold = 48;
+
+  const applyDragStyle = (dx, dy) => {
+    const el = state.targetEl;
+    if (!el) return;
+    el.style.setProperty('--drag-x', `${dx}px`);
+    el.dataset.dragDirection = dx < 0 ? 'left' : '';
+  };
+
+  const clearDragStyle = () => {
+    const el = state.targetEl;
+    if (!el) return;
+    el.style.setProperty('--drag-x', '0px');
+    delete el.dataset.dragDirection;
+    delete el.dataset.swipeArmed;
+    el.classList.remove('dragging');
+  };
+
+  const onStart = (el, x, y, pointer) => {
+    const now = performance.now();
+    state.active = true;
+    state.pointer = pointer;
+    state.startX = x;
+    state.startY = y;
+    state.lastX = x;
+    state.lastY = y;
+    state.startT = now;
+    state.movedX = 0;
+    state.movedY = 0;
+    state.armed = false;
+    state.swiped = false;
+    state.targetEl = el;
+    el.classList.add('dragging');
+  };
+
+  const onMove = (x, y) => {
+    if (!state.active) return;
+    const dx = x - state.startX;
+    const dy = y - state.startY;
+    state.lastX = x;
+    state.lastY = y;
+    state.movedX = dx;
+    state.movedY = dy;
+
+    // If vertical intent dominates early, abort dragging visuals
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 16) {
+      clearDragStyle();
+      return;
+    }
+
+    // Only apply drag style for left swipes
+    if (dx < 0) {
+      applyDragStyle(dx, dy);
+    } else {
+      clearDragStyle();
+      return;
+    }
+
+    // Arm left swipes
+    const shouldArm = dx < 0 && Math.abs(dx) >= armThreshold;
+    if (shouldArm !== state.armed) {
+      state.armed = shouldArm;
+      const el = state.targetEl;
+      if (el) el.dataset.swipeArmed = shouldArm ? 'true' : 'false';
+      // Haptic feedback
+      if (shouldArm && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    }
+  };
+
+  const onEnd = () => {
+    if (!state.active || !state.targetEl) return;
+    const dt = Math.max(1, performance.now() - state.startT);
+    const dx = state.movedX;
+    const absX = Math.abs(dx);
+    const speed = absX / dt;
+
+    let didSwipe = false;
+    if (absX >= threshold || (absX >= 24 && speed >= velocity)) {
+      if (dx < 0) {
+        didSwipe = true;
+      }
+    }
+
+    const el = state.targetEl;
+    if (didSwipe && el) {
+      state.swiped = true;
+      if (onSwipeLeft) onSwipeLeft();
+      el.classList.add('swipe-complete');
+      clearDragStyle();
+      setTimeout(() => el.classList.remove('swipe-complete'), 400);
+    } else {
+      clearDragStyle();
+    }
+
+    state.active = false;
+    state.pointer = 'none';
+  };
+
+  return {
+    onTouchStart: (e) => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      onStart(e.currentTarget, t.clientX, t.clientY, 'touch');
+    },
+    onTouchMove: (e) => {
+      if (!state.active || state.pointer !== 'touch') return;
+      const t = e.touches[0];
+      if (!t) return;
+      onMove(t.clientX, t.clientY);
+    },
+    onTouchEnd: () => {
+      if (state.pointer !== 'touch') return;
+      onEnd();
+    },
+    onMouseDown: (e) => {
+      if (e.button !== 0) return;
+      if (window.getSelection) window.getSelection().removeAllRanges();
+      onStart(e.currentTarget, e.clientX, e.clientY, 'mouse');
+    },
+    onMouseMove: (e) => {
+      if (!state.active || state.pointer !== 'mouse') return;
+      onMove(e.clientX, e.clientY);
+    },
+    onMouseUp: () => {
+      if (state.pointer !== 'mouse') return;
+      onEnd();
+    },
+    onClick: (e) => {
+      if (Math.abs(state.movedX) > 6 || state.swiped) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
+}
+
+// Delete workout
+async function deleteWorkout(sessionId) {
+  const success = await window.deleteWorkoutSummary(sessionId);
+  if (success) {
+    // Reload the workout list
+    await loadWorkoutSummaries();
+  }
+  return success;
+}
+
 // Display workout summaries in the list
 function displayWorkoutSummaries(workouts) {
   const listContainer = document.getElementById('workoutSummaryList');
@@ -521,11 +688,13 @@ function displayWorkoutSummaries(workouts) {
     const summary = workout.summary;
     const workoutItem = document.createElement('div');
     workoutItem.className = 'workout-item';
+    workoutItem.dataset.sessionId = summary.external_session_id;
     
     const date = new Date(summary.startedAt);
     const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     workoutItem.innerHTML = `
+      <div class="swipe-left-indicator"></div>
       <div class="workout-item-header">
         <div>
           <div class="workout-item-title">${summary.intent || 'Workout'}</div>
@@ -542,6 +711,29 @@ function displayWorkoutSummaries(workouts) {
         <button class="button secondary" onclick="downloadWorkoutJson('${summary.external_session_id}')">Download JSON</button>
       </div>
     `;
+    
+    // Add swipe handler
+    const swipe = createSwipeHandler(() => {
+      const sessionId = workoutItem.dataset.sessionId;
+      if (sessionId) {
+        workoutItem.classList.add('deleting');
+        setTimeout(() => {
+          deleteWorkout(sessionId);
+        }, 300);
+      }
+    });
+    
+    workoutItem.addEventListener('touchstart', swipe.onTouchStart);
+    workoutItem.addEventListener('touchmove', swipe.onTouchMove);
+    workoutItem.addEventListener('touchend', swipe.onTouchEnd);
+    workoutItem.addEventListener('mousedown', swipe.onMouseDown);
+    workoutItem.addEventListener('mousemove', swipe.onMouseMove);
+    workoutItem.addEventListener('mouseup', swipe.onMouseUp);
+    
+    // Prevent click after swipe
+    workoutItem.addEventListener('click', (e) => {
+      if (swipe.onClick) swipe.onClick(e);
+    }, true);
     
     listContainer.appendChild(workoutItem);
   });
