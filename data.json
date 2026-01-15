@@ -221,7 +221,7 @@
       "day": "Saturday",
       "type": "Long Zone 2",
       "intent": "aerobic_volume",
-      "machine": "Elliptical or Bike",
+      "machine": "Elliptical",
       "warmup": {
         "duration_min": 10,
         "target_hr_bpm": "110–120"
