@@ -334,10 +334,30 @@ function getCurrentIntervalName(day, elapsedSec, blocks) {
   return null;
 }
 
-// Parse HR target range from text (e.g., "110–120 bpm", "<120 bpm", "155–165 bpm")
+// Parse HR target range from text (e.g., "110–120 bpm", "<120 bpm", "155–165 bpm", "≥160 (cap 170) bpm")
 function parseHrTargetRange(hrTargetText) {
   if (!hrTargetText || hrTargetText === "") {
     return null;
+  }
+  
+  // Try to match patterns like "≥160 (cap 170)" or "≥160"
+  const greaterThanCapMatch = hrTargetText.match(/≥(\d+)\s*\(cap\s*(\d+)\)/);
+  if (greaterThanCapMatch) {
+    return {
+      min: parseInt(greaterThanCapMatch[1]),
+      max: parseInt(greaterThanCapMatch[2])
+    };
+  }
+  
+  // Try to match patterns like "≥160"
+  const greaterThanMatch = hrTargetText.match(/≥(\d+)/);
+  if (greaterThanMatch) {
+    const value = parseInt(greaterThanMatch[1]);
+    // For "≥160", treat as range from 160 to 200 (reasonable max)
+    return {
+      min: value,
+      max: 200
+    };
   }
   
   // Try to match patterns like "110–120" or "155–165"

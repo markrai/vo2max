@@ -83,7 +83,42 @@ function getPhase(elapsedSec, blocks) {
   const c = blocks.cool * 60;
 
   if (elapsedSec < w) return { phase: "Warm-Up", timeLeft: w - elapsedSec, done: false };
-  if (elapsedSec < w + s) return { phase: "Sustain", timeLeft: (w + s) - elapsedSec, done: false };
+  if (elapsedSec < w + s) {
+    // For interval workouts, calculate time left in current interval phase
+    const day = (typeof getSelectedDay === 'function') ? getSelectedDay() : todayName();
+    const hrTargets = (typeof getHrTargets === 'function') ? getHrTargets() : {};
+    const dayHrTargets = hrTargets[day];
+    
+    if (dayHrTargets && dayHrTargets.intervals && dayHrTargets.intervals.phases) {
+      const warmSec = blocks.warm * 60;
+      const sustainElapsed = Math.max(0, elapsedSec - warmSec);
+      const phases = dayHrTargets.intervals.phases;
+      const isSequence = dayHrTargets.intervals.isSequence;
+      
+      let elapsedInPhases = sustainElapsed;
+      
+      if (isSequence) {
+        const totalDuration = phases.reduce((sum, p) => sum + p.duration * 60, 0);
+        elapsedInPhases = Math.min(sustainElapsed, totalDuration);
+      } else {
+        const cycleDuration = phases.reduce((sum, p) => sum + p.duration * 60, 0);
+        elapsedInPhases = sustainElapsed % cycleDuration;
+      }
+      
+      let accumulated = 0;
+      for (let i = 0; i < phases.length; i++) {
+        const phaseDuration = phases[i].duration * 60;
+        if (elapsedInPhases < accumulated + phaseDuration) {
+          const timeLeftInPhase = (accumulated + phaseDuration) - elapsedInPhases;
+          return { phase: "Sustain", timeLeft: timeLeftInPhase, done: false };
+        }
+        accumulated += phaseDuration;
+      }
+    }
+    
+    // Fallback to total sustain time for non-interval workouts
+    return { phase: "Sustain", timeLeft: (w + s) - elapsedSec, done: false };
+  }
   if (elapsedSec < w + s + c) return { phase: "Cool-Down", timeLeft: (w + s + c) - elapsedSec, done: false };
 
   return { phase: "Completed", timeLeft: 0, done: true };
