@@ -20,14 +20,23 @@ async function loadSisuSettings() {
       sisuConnectionState.host = settings.host;
       sisuConnectionState.port = settings.port;
       
-      // Populate input fields
+      // Populate input fields (clean host value)
       const hostInput = document.getElementById('sisuHost');
       const portInput = document.getElementById('sisuPort');
-      if (hostInput) hostInput.value = settings.host;
+      if (hostInput) {
+        // Clean host: remove protocol, trailing colons
+        let host = settings.host;
+        host = host.replace(/^https?:\/\//, ''); // Remove http:// or https://
+        host = host.replace(/:\d+$/, ''); // Remove trailing :port
+        host = host.replace(/\/$/, ''); // Remove trailing slash
+        host = host.replace(/:$/, ''); // Remove trailing colon
+        hostInput.value = host;
+      }
       if (portInput) portInput.value = settings.port;
       
-      // Test connection and update status
-      const isConnected = await testSisuConnection(settings.host, settings.port);
+      // Test connection and update status (use cleaned host)
+      const cleanedHost = settings.host.replace(/^https?:\/\//, '').replace(/:\d+$/, '').replace(/\/$/, '').replace(/:$/, '');
+      const isConnected = await testSisuConnection(cleanedHost, settings.port);
       updateSISUStatus(isConnected ? `Connected to ${settings.host}:${settings.port}` : 'Settings saved but not connected', isConnected);
       return settings;
     } else {
@@ -90,7 +99,13 @@ async function connectSISU() {
     return;
   }
   
-  const host = hostInput.value.trim();
+  // Clean host: remove protocol, trailing colons, and whitespace
+  let host = hostInput.value.trim();
+  host = host.replace(/^https?:\/\//, ''); // Remove http:// or https://
+  host = host.replace(/:\d+$/, ''); // Remove trailing :port
+  host = host.replace(/\/$/, ''); // Remove trailing slash
+  host = host.replace(/:$/, ''); // Remove trailing colon
+  
   const port = parseInt(portInput.value, 10);
   
   if (!host || !port || isNaN(port)) {

@@ -1,6 +1,6 @@
 // Service Worker for VO2 Max Coach PWA
 // Version is embedded here - update when releasing new version
-const APP_VERSION = '0.8.4';
+const APP_VERSION = '0.8.5';
 const CACHE_NAME = `vo2-coach-${APP_VERSION}`;
 
 const urlsToCache = [
