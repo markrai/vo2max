@@ -108,9 +108,18 @@
         <div class="label" style="text-align: center; margin-bottom: 16px;">Sync</div>
         <div class="modal-section">
           <div class="label" style="text-align: center; opacity: 0.7; margin-bottom: 20px;">
-            Connect to SISU to sync HRV baseline and adjust workouts automatically.
+            Connect to SISU to sync workouts and HRV baseline.
+          </div>
+          <div class="modal-field">
+            <label class="modal-label" for="sisuHost">SISU Host</label>
+            <input id="sisuHost" class="modal-input" type="text" placeholder="192.168.1.100">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label" for="sisuPort">Port</label>
+            <input id="sisuPort" class="modal-input" type="number" placeholder="9163">
           </div>
           <div id="sisuStatus" class="label" style="text-align: center; margin-bottom: 16px;">Not connected</div>
+          <div id="sisuConnectionInfo" class="label" style="text-align: center; opacity: 0.7; margin-bottom: 16px; display: none;"></div>
           <button class="button" id="sisuConnectButton" onclick="connectSISU()">Connect to SISU</button>
         </div>
         

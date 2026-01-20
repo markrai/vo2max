@@ -502,7 +502,10 @@ function switchTab(tabName) {
   } else if (tabName === 'sisu') {
     document.getElementById('sisuTab').classList.add('active');
     buttons[2].classList.add('active');
-    updateSISUStatus();
+    // Load SISU settings when tab is opened
+    if (typeof window.loadSisuSettings === 'function') {
+      window.loadSisuSettings();
+    }
   } else if (tabName === 'install') {
     document.getElementById('installTab').classList.add('active');
     buttons[3].classList.add('active');
@@ -526,7 +529,7 @@ async function loadWorkoutSummaries() {
 }
 
 // Swipe handler for workout items
-function createSwipeHandler(onSwipeLeft) {
+function createSwipeHandler(onSwipeLeft, onSwipeRight) {
   const state = {
     active: false,
     pointer: 'none',
@@ -550,7 +553,13 @@ function createSwipeHandler(onSwipeLeft) {
     const el = state.targetEl;
     if (!el) return;
     el.style.setProperty('--drag-x', `${dx}px`);
-    el.dataset.dragDirection = dx < 0 ? 'left' : '';
+    if (dx < 0) {
+      el.dataset.dragDirection = 'left';
+    } else if (dx > 0) {
+      el.dataset.dragDirection = 'right';
+    } else {
+      delete el.dataset.dragDirection;
+    }
   };
 
   const clearDragStyle = () => {
@@ -594,16 +603,16 @@ function createSwipeHandler(onSwipeLeft) {
       return;
     }
 
-    // Only apply drag style for left swipes
-    if (dx < 0) {
+    // Apply drag style for both left and right swipes
+    if (Math.abs(dx) > 0) {
       applyDragStyle(dx, dy);
     } else {
       clearDragStyle();
       return;
     }
 
-    // Arm left swipes
-    const shouldArm = dx < 0 && Math.abs(dx) >= armThreshold;
+    // Arm swipes (left or right)
+    const shouldArm = Math.abs(dx) >= armThreshold;
     if (shouldArm !== state.armed) {
       state.armed = shouldArm;
       const el = state.targetEl;
@@ -623,16 +632,25 @@ function createSwipeHandler(onSwipeLeft) {
     const speed = absX / dt;
 
     let didSwipe = false;
+    let swipeDirection = null;
     if (absX >= threshold || (absX >= 24 && speed >= velocity)) {
       if (dx < 0) {
         didSwipe = true;
+        swipeDirection = 'left';
+      } else if (dx > 0) {
+        didSwipe = true;
+        swipeDirection = 'right';
       }
     }
 
     const el = state.targetEl;
     if (didSwipe && el) {
       state.swiped = true;
-      if (onSwipeLeft) onSwipeLeft();
+      if (swipeDirection === 'left' && onSwipeLeft) {
+        onSwipeLeft();
+      } else if (swipeDirection === 'right' && onSwipeRight) {
+        onSwipeRight();
+      }
       el.classList.add('swipe-complete');
       clearDragStyle();
       setTimeout(() => el.classList.remove('swipe-complete'), 400);
@@ -739,6 +757,7 @@ function displayWorkoutSummaries(workouts) {
     
     workoutItem.innerHTML = `
       <div class="swipe-left-indicator"></div>
+      <div class="swipe-right-indicator"></div>
       <div class="workout-item-header">
         <div>
           <div class="workout-item-title">${summary.intent || 'Workout'}</div>
@@ -756,19 +775,41 @@ function displayWorkoutSummaries(workouts) {
       </div>
     `;
     
-    // Add swipe handler
-    const swipe = createSwipeHandler(() => {
-      const sessionId = workoutItem.dataset.sessionId;
-      if (sessionId) {
-        workoutItem.classList.add('deleting');
-        setTimeout(() => {
-          // Reset the swipe animation
-          workoutItem.classList.remove('deleting');
-          // Show delete confirmation dialog
-          openDeleteWorkoutModal(sessionId);
-        }, 300);
+    // Add swipe handler with both left (delete) and right (send to SISU) actions
+    const swipe = createSwipeHandler(
+      // Left swipe: delete
+      () => {
+        const sessionId = workoutItem.dataset.sessionId;
+        if (sessionId) {
+          workoutItem.classList.add('deleting');
+          setTimeout(() => {
+            // Reset the swipe animation
+            workoutItem.classList.remove('deleting');
+            // Show delete confirmation dialog
+            openDeleteWorkoutModal(sessionId);
+          }, 300);
+        }
+      },
+      // Right swipe: send to SISU
+      async () => {
+        const sessionId = workoutItem.dataset.sessionId;
+        if (sessionId) {
+          workoutItem.classList.add('sending');
+          try {
+            const result = await window.sendWorkoutToSisu(sessionId);
+            workoutItem.classList.remove('sending');
+            if (result.success) {
+              showToast(result.message, 'success');
+            } else {
+              showToast(result.message, 'error');
+            }
+          } catch (error) {
+            workoutItem.classList.remove('sending');
+            showToast('Error sending to SISU: ' + error.message, 'error');
+          }
+        }
       }
-    });
+    );
     
     workoutItem.addEventListener('touchstart', swipe.onTouchStart);
     workoutItem.addEventListener('touchmove', swipe.onTouchMove);
@@ -829,6 +870,30 @@ function downloadWorkoutSummaryJson() {
   downloadWorkoutJson(currentWorkoutSummary.external_session_id);
 }
 
+// Toast notification function
+function showToast(message, type = 'info') {
+  // Remove existing toast if any
+  const existingToast = document.getElementById('toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  // Trigger animation
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 // Download specific workout JSON
 function downloadWorkoutJson(sessionId) {
   window.initDB().then(db => {
@@ -864,4 +929,5 @@ window.viewWorkoutSummary = viewWorkoutSummary;
 window.showWorkoutSummaryModal = showWorkoutSummaryModal;
 window.closeWorkoutSummaryModal = closeWorkoutSummaryModal;
 window.downloadWorkoutSummaryJson = downloadWorkoutSummaryJson;
+window.showToast = showToast;
 window.downloadWorkoutJson = downloadWorkoutJson;

@@ -35,6 +35,11 @@ loadProfile();
   await initializeWorkoutPlan();
   updateDisplay();
   setInterval(updateDisplay, 1000);
+  
+  // Load SISU settings on app init
+  if (typeof window.loadSisuSettings === 'function') {
+    await window.loadSisuSettings();
+  }
 })();
 
 // Set app version display

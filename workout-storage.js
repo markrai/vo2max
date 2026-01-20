@@ -1,8 +1,9 @@
 // IndexedDB storage for workout sessions and HR samples
 const DB_NAME = 'vo2_workout_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_WORKOUTS = 'workouts';
 const STORE_HR_SAMPLES = 'hr_samples';
+const STORE_SISU_SETTINGS = 'sisu_settings';
 
 let db = null;
 
@@ -43,6 +44,13 @@ function initDB() {
           keyPath: ['session_id', 'timestamp_sec']
         });
         hrSamplesStore.createIndex('session_id', 'session_id', { unique: false });
+      }
+
+      // Create SISU settings store
+      if (!database.objectStoreNames.contains(STORE_SISU_SETTINGS)) {
+        database.createObjectStore(STORE_SISU_SETTINGS, {
+          keyPath: 'key'
+        });
       }
     };
   });
@@ -188,6 +196,64 @@ async function deleteWorkoutSummary(sessionId) {
   }
 }
 
+// Store SISU connection settings
+async function storeSisuSettings(host, port) {
+  try {
+    const database = await initDB();
+    const transaction = database.transaction([STORE_SISU_SETTINGS], 'readwrite');
+    const store = transaction.objectStore(STORE_SISU_SETTINGS);
+    
+    await store.put({
+      key: 'config',
+      host: host,
+      port: port,
+      last_connected: new Date().toISOString(),
+      last_sync: null
+    });
+    return true;
+  } catch (error) {
+    console.error('Error storing SISU settings:', error);
+    return false;
+  }
+}
+
+// Get SISU connection settings
+async function getSisuSettings() {
+  try {
+    const database = await initDB();
+    const transaction = database.transaction([STORE_SISU_SETTINGS], 'readonly');
+    const store = transaction.objectStore(STORE_SISU_SETTINGS);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get('config');
+      request.onsuccess = () => {
+        resolve(request.result || null);
+      };
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error('Error getting SISU settings:', error);
+    return null;
+  }
+}
+
+// Clear SISU settings
+async function clearSisuSettings() {
+  try {
+    const database = await initDB();
+    const transaction = database.transaction([STORE_SISU_SETTINGS], 'readwrite');
+    const store = transaction.objectStore(STORE_SISU_SETTINGS);
+    
+    await store.delete('config');
+    return true;
+  } catch (error) {
+    console.error('Error clearing SISU settings:', error);
+    return false;
+  }
+}
+
 // Expose functions globally
 window.initDB = initDB;
 window.storeHrSample = storeHrSample;
@@ -196,3 +262,6 @@ window.storeWorkoutSummary = storeWorkoutSummary;
 window.clearHrSamples = clearHrSamples;
 window.getAllWorkoutSummaries = getAllWorkoutSummaries;
 window.deleteWorkoutSummary = deleteWorkoutSummary;
+window.storeSisuSettings = storeSisuSettings;
+window.getSisuSettings = getSisuSettings;
+window.clearSisuSettings = clearSisuSettings;

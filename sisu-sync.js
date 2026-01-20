@@ -1,42 +1,117 @@
-// SISU Sync - Future REST endpoint integration for HRV baseline and workout adjustments
-// This file contains scaffolding for future implementation
-
-// Configuration - to be set when REST endpoint is available
-const SISU_CONFIG = {
-  apiEndpoint: null, // Will be set to actual endpoint URL
-  apiKey: null,      // Will be set to user's API key
-  enabled: false     // Toggle for SISU sync feature
-};
+// SISU Sync - REST endpoint integration for workout sync and HRV baseline
 
 // SISU connection state
 let sisuConnectionState = {
   connected: false,
   lastSync: null,
   hrvBaseline: null,
-  syncError: null
+  syncError: null,
+  host: null,
+  port: null
 };
 
 /**
+ * Load SISU settings from IndexedDB
+ */
+async function loadSisuSettings() {
+  try {
+    const settings = await window.getSisuSettings();
+    if (settings) {
+      sisuConnectionState.host = settings.host;
+      sisuConnectionState.port = settings.port;
+      
+      // Populate input fields
+      const hostInput = document.getElementById('sisuHost');
+      const portInput = document.getElementById('sisuPort');
+      if (hostInput) hostInput.value = settings.host;
+      if (portInput) portInput.value = settings.port;
+      
+      // Test connection and update status
+      const isConnected = await testSisuConnection(settings.host, settings.port);
+      updateSISUStatus(isConnected ? `Connected to ${settings.host}:${settings.port}` : 'Settings saved but not connected', isConnected);
+      return settings;
+    } else {
+      // No settings found - ensure status is set to default
+      updateSISUStatus('Not connected', false);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error loading SISU settings:', error);
+    updateSISUStatus('Error loading settings', false);
+    return null;
+  }
+}
+
+/**
+ * Test connection to SISU health endpoint
+ */
+async function testSisuConnection(host, port) {
+  try {
+    const url = `http://${host}:${port}/health`;
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors', // Explicitly enable CORS
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.status === 'ok';
+    }
+    return false;
+  } catch (error) {
+    console.error('SISU connection test error:', error);
+    return false;
+  }
+}
+
+/**
  * Initialize SISU sync connection
- * Future: Connect to SISU REST endpoint and authenticate
  */
 async function connectSISU() {
-  if (!SISU_CONFIG.apiEndpoint) {
-    updateSISUStatus('SISU endpoint not configured', false);
+  const hostInput = document.getElementById('sisuHost');
+  const portInput = document.getElementById('sisuPort');
+  
+  if (!hostInput || !portInput) {
+    updateSISUStatus('Input fields not found', false);
     return;
   }
-
+  
+  const host = hostInput.value.trim();
+  const port = parseInt(portInput.value, 10);
+  
+  if (!host || !port || isNaN(port)) {
+    updateSISUStatus('Please enter valid host and port', false);
+    return;
+  }
+  
   try {
-    // TODO: Implement REST endpoint connection
-    // const response = await fetch(`${SISU_CONFIG.apiEndpoint}/auth`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ apiKey: SISU_CONFIG.apiKey })
-    // });
+    // Test connection
+    updateSISUStatus('Testing connection...', false);
+    const isConnected = await testSisuConnection(host, port);
     
-    // Placeholder for future implementation
-    updateSISUStatus('Connection not yet implemented', false);
-    console.log('SISU connection - to be implemented');
+    if (isConnected) {
+      // Store settings
+      const stored = await window.storeSisuSettings(host, port);
+      if (stored) {
+        sisuConnectionState.host = host;
+        sisuConnectionState.port = port;
+        sisuConnectionState.connected = true;
+        updateSISUStatus(`Connected to ${host}:${port}`, true);
+        
+        // Show connection info
+        const infoEl = document.getElementById('sisuConnectionInfo');
+        if (infoEl) {
+          infoEl.textContent = `Connected to ${host}:${port}`;
+          infoEl.style.display = 'block';
+        }
+      } else {
+        updateSISUStatus('Connection successful but failed to save settings', false);
+      }
+    } else {
+      updateSISUStatus('Connection failed - check host and port', false);
+    }
   } catch (error) {
     console.error('SISU connection error:', error);
     updateSISUStatus('Connection failed: ' + error.message, false);
@@ -142,10 +217,26 @@ function updateSISUStatus(message, connected) {
 /**
  * Disconnect from SISU
  */
-function disconnectSISU() {
+async function disconnectSISU() {
+  await window.clearSisuSettings();
   sisuConnectionState.connected = false;
+  sisuConnectionState.host = null;
+  sisuConnectionState.port = null;
   sisuConnectionState.hrvBaseline = null;
   sisuConnectionState.syncError = null;
+  
+  // Clear input fields
+  const hostInput = document.getElementById('sisuHost');
+  const portInput = document.getElementById('sisuPort');
+  if (hostInput) hostInput.value = '';
+  if (portInput) portInput.value = '';
+  
+  // Hide connection info
+  const infoEl = document.getElementById('sisuConnectionInfo');
+  if (infoEl) {
+    infoEl.style.display = 'none';
+  }
+  
   updateSISUStatus('Disconnected', false);
 }
 
@@ -168,6 +259,75 @@ async function syncWithSISU() {
   }
 }
 
+/**
+ * Send workout summary to SISU
+ */
+async function sendWorkoutToSisu(sessionId) {
+  try {
+    // Get SISU settings
+    const settings = await window.getSisuSettings();
+    if (!settings || !settings.host || !settings.port) {
+      return { success: false, message: 'SISU not configured. Please connect in Settings > Sync tab.' };
+    }
+    
+    // Get workout summary from IndexedDB
+    const database = await window.initDB();
+    const transaction = database.transaction(['workouts'], 'readonly');
+    const store = transaction.objectStore('workouts');
+    
+    const workoutData = await new Promise((resolve, reject) => {
+      const request = store.get(sessionId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    
+    if (!workoutData || !workoutData.summary) {
+      return { success: false, message: 'Workout not found' };
+    }
+    
+    const summary = workoutData.summary;
+    
+    // Remove 'day' field if present (SISU doesn't expect it in the payload)
+    const payload = { ...summary };
+    delete payload.day;
+    
+    // POST to SISU
+    const url = `http://${settings.host}:${settings.port}/workout/ingest`;
+    const response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors', // Explicitly enable CORS
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // Update last sync time
+      await window.storeSisuSettings(settings.host, settings.port);
+      return { success: true, message: `Workout sent to SISU (Load: ${data.acuteLoadPoints} points)` };
+    } else {
+      const errorText = await response.text();
+      let errorMessage = `SISU error (${response.status})`;
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        errorMessage = errorText || errorMessage;
+      }
+      return { success: false, message: errorMessage };
+    }
+  } catch (error) {
+    console.error('Error sending workout to SISU:', error);
+    if (error.name === 'AbortError') {
+      return { success: false, message: 'Connection timeout - check SISU server' };
+    }
+    return { success: false, message: 'Network error: ' + error.message };
+  }
+}
+
 // Expose functions to window for global access
 window.connectSISU = connectSISU;
 window.disconnectSISU = disconnectSISU;
@@ -175,3 +335,5 @@ window.updateSISUStatus = updateSISUStatus;
 window.syncWithSISU = syncWithSISU;
 window.getTodayHRVFromSISU = getTodayHRVFromSISU;
 window.adjustedBlockLengthsFromSISU = adjustedBlockLengthsFromSISU;
+window.loadSisuSettings = loadSisuSettings;
+window.sendWorkoutToSisu = sendWorkoutToSisu;
