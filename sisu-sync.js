@@ -43,11 +43,23 @@ async function loadSisuSettings() {
 }
 
 /**
+ * Get the protocol to use for SISU connections
+ * Auto-detects based on current page protocol to avoid mixed content issues
+ */
+function getSisuProtocol() {
+  // If VO2 app is served over HTTPS, use HTTPS for SISU (or browser will block)
+  // If VO2 app is served over HTTP, use HTTP for SISU
+  return window.location.protocol === 'https:' ? 'https' : 'http';
+}
+
+/**
  * Test connection to SISU health endpoint
  */
 async function testSisuConnection(host, port) {
   try {
-    const url = `http://${host}:${port}/health`;
+    // Auto-detect protocol based on current page to avoid mixed content
+    const protocol = getSisuProtocol();
+    const url = `${protocol}://${host}:${port}/health`;
     const response = await fetch(url, {
       method: 'GET',
       mode: 'cors', // Explicitly enable CORS
@@ -291,8 +303,9 @@ async function sendWorkoutToSisu(sessionId) {
     const payload = { ...summary };
     delete payload.day;
     
-    // POST to SISU
-    const url = `http://${settings.host}:${settings.port}/workout/ingest`;
+    // POST to SISU (auto-detect protocol to match current page)
+    const protocol = getSisuProtocol();
+    const url = `${protocol}://${settings.host}:${settings.port}/workout/ingest`;
     const response = await fetch(url, {
       method: 'POST',
       mode: 'cors', // Explicitly enable CORS
