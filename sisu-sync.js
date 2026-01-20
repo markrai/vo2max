@@ -61,14 +61,25 @@ function getSisuProtocol() {
   return window.location.protocol === 'https:' ? 'https' : 'http';
 }
 
+function cleanHostForUrl(host) {
+  if (!host) return host;
+  return String(host)
+    .trim()
+    .replace(/^https?:\/\//, '') // Remove protocol if user pasted it
+    .replace(/:\d+$/, '') // Remove trailing :port
+    .replace(/\/$/, '') // Remove trailing slash
+    .replace(/:$/, ''); // Remove trailing colon
+}
+
 /**
  * Test connection to SISU health endpoint
  */
 async function testSisuConnection(host, port) {
   try {
     // Auto-detect protocol based on current page to avoid mixed content
+    const cleanedHost = cleanHostForUrl(host);
     const protocol = getSisuProtocol();
-    const url = `${protocol}://${host}:${port}/health`;
+    const url = `${protocol}://${cleanedHost}:${port}/health`;
     const response = await fetch(url, {
       method: 'GET',
       mode: 'cors', // Explicitly enable CORS
@@ -100,11 +111,7 @@ async function connectSISU() {
   }
   
   // Clean host: remove protocol, trailing colons, and whitespace
-  let host = hostInput.value.trim();
-  host = host.replace(/^https?:\/\//, ''); // Remove http:// or https://
-  host = host.replace(/:\d+$/, ''); // Remove trailing :port
-  host = host.replace(/\/$/, ''); // Remove trailing slash
-  host = host.replace(/:$/, ''); // Remove trailing colon
+  const host = cleanHostForUrl(hostInput.value);
   
   const port = parseInt(portInput.value, 10);
   
@@ -112,10 +119,19 @@ async function connectSISU() {
     updateSISUStatus('Please enter valid host and port', false);
     return;
   }
+
+  // Guardrail: users often accidentally paste the VO2 host instead of the SISU host.
+  // If you point at VO2, you’ll get confusing 503/404 errors from the wrong service.
+  const currentHost = window.location.hostname;
+  if (host === currentHost || (host.includes('vo2') && !host.includes('sisu'))) {
+    updateSISUStatus(`That looks like the VO2 host (${host}). Enter your SISU host (e.g. sisu.int.oyehoy.net).`, false);
+    return;
+  }
   
   try {
     // Test connection
-    updateSISUStatus('Testing connection...', false);
+    const protocol = getSisuProtocol();
+    updateSISUStatus(`Testing ${protocol}://${host}:${port}/health ...`, false);
     const isConnected = await testSisuConnection(host, port);
     
     if (isConnected) {
@@ -319,8 +335,10 @@ async function sendWorkoutToSisu(sessionId) {
     delete payload.day;
     
     // POST to SISU (auto-detect protocol to match current page)
+    // Clean host to ensure no protocol prefix (defensive programming)
+    const cleanedHost = cleanHostForUrl(settings.host);
     const protocol = getSisuProtocol();
-    const url = `${protocol}://${settings.host}:${settings.port}/workout/ingest`;
+    const url = `${protocol}://${cleanedHost}:${settings.port}/workout/ingest`;
     const response = await fetch(url, {
       method: 'POST',
       mode: 'cors', // Explicitly enable CORS
