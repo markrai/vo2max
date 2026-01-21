@@ -29,9 +29,34 @@ if (workoutSummaryModalBg) {
   });
 }
 
+// Clean up stale workout sessions on app startup
+function cleanupStaleWorkoutSessions() {
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const now = Date.now();
+  
+  days.forEach(day => {
+    const sessionStart = localStorage.getItem(`session_start_${day}`);
+    if (sessionStart) {
+      const sessionAge = now - parseInt(sessionStart);
+      if (sessionAge > MAX_SESSION_AGE_MS) {
+        // Stale session - clean it up
+        console.warn(`Cleaning up stale workout session for ${day} (age: ${Math.round(sessionAge / (1000 * 60 * 60))} hours)`);
+        localStorage.removeItem(`start_${day}`);
+        localStorage.removeItem(`session_id_${day}`);
+        localStorage.removeItem(`session_start_${day}`);
+        localStorage.removeItem(`summary_emitted_${day}`);
+      }
+    }
+  });
+}
+
 // Initialize app
 loadProfile();
 (async () => {
+  // Clean up stale workout sessions first
+  cleanupStaleWorkoutSessions();
+  
   await initializeWorkoutPlan();
   updateDisplay();
   setInterval(updateDisplay, 1000);

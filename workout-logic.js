@@ -48,13 +48,27 @@ async function restartWorkout() {
   const summaryEmitted = localStorage.getItem("summary_emitted_" + day);
   
   // Emit summary if workout was active (aborted workout)
+  // Check for stale sessions (older than 24 hours) and skip them
   if (startTime && sessionId && sessionStart && summaryEmitted === "false" && typeof window.generateWorkoutSummary === 'function') {
-    const endedAt = Date.now();
-    try {
-      const summary = await window.generateWorkoutSummary(sessionId, parseInt(sessionStart), endedAt, day);
-      await window.emitWorkoutSummary(summary);
-    } catch (error) {
-      console.error('Error emitting workout summary on cancel:', error);
+    const sessionStartTime = parseInt(sessionStart);
+    const sessionAge = Date.now() - sessionStartTime;
+    const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (sessionAge > MAX_SESSION_AGE_MS) {
+      console.warn(`Skipping stale workout session for ${day} (age: ${Math.round(sessionAge / (1000 * 60 * 60))} hours)`);
+      // Clean up stale session without generating summary
+    } else {
+      const endedAt = Date.now();
+      try {
+        const summary = await window.generateWorkoutSummary(sessionId, sessionStartTime, endedAt, day);
+        await window.emitWorkoutSummary(summary);
+      } catch (error) {
+        console.error('Error emitting workout summary on cancel:', error);
+        // If error is due to duration validation, clean up the stale session
+        if (error.message && error.message.includes('exceeds maximum')) {
+          console.warn('Stale session detected, cleaning up...');
+        }
+      }
     }
   }
   

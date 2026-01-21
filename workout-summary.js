@@ -99,6 +99,13 @@ function validateSummary(summary) {
     errors.push(`startedAt (${summary.startedAt}) must be before endedAt (${summary.endedAt})`);
   }
 
+  // Check maximum reasonable duration (24 hours = 1440 minutes)
+  // This prevents stale sessions from creating unrealistic workout durations
+  const MAX_DURATION_MINUTES = 1440;
+  if (summary.duration_minutes > MAX_DURATION_MINUTES) {
+    errors.push(`Duration ${summary.duration_minutes} minutes exceeds maximum of ${MAX_DURATION_MINUTES} minutes (24 hours). This likely indicates a stale workout session.`);
+  }
+
   // Check JSON validity
   try {
     JSON.stringify(summary);
@@ -111,6 +118,15 @@ function validateSummary(summary) {
 
 // Generate workout summary
 async function generateWorkoutSummary(sessionId, startedAt, endedAt, day) {
+  // Validate duration before generating summary (prevent stale sessions)
+  const durationMs = endedAt - startedAt;
+  const durationMinutesCheck = Math.round(durationMs / (1000 * 60));
+  const MAX_DURATION_MINUTES = 1440; // 24 hours
+  
+  if (durationMinutesCheck > MAX_DURATION_MINUTES) {
+    throw new Error(`Workout duration ${durationMinutesCheck} minutes exceeds maximum of ${MAX_DURATION_MINUTES} minutes. This likely indicates a stale workout session. Started: ${new Date(startedAt).toISOString()}, Ended: ${new Date(endedAt).toISOString()}`);
+  }
+  
   // Get HR samples
   const hrSamples = await window.getHrSamples(sessionId);
 

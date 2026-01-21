@@ -199,17 +199,39 @@ function updateDisplay() {
       const sessionId = localStorage.getItem("session_id_" + day);
       const sessionStart = localStorage.getItem("session_start_" + day);
       if (sessionId && sessionStart) {
-        const endedAt = Date.now();
-        window.generateWorkoutSummary(sessionId, parseInt(sessionStart), endedAt, day)
-          .then(summary => {
-            return window.emitWorkoutSummary(summary);
-          })
-          .then(() => {
-            localStorage.setItem("summary_emitted_" + day, "true");
-          })
-          .catch(error => {
-            console.error('Error emitting workout summary on completion:', error);
-          });
+        const sessionStartTime = parseInt(sessionStart);
+        const sessionAge = Date.now() - sessionStartTime;
+        const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+        
+        // Skip stale sessions (older than 24 hours)
+        if (sessionAge > MAX_SESSION_AGE_MS) {
+          console.warn(`Skipping stale workout session for ${day} on completion (age: ${Math.round(sessionAge / (1000 * 60 * 60))} hours)`);
+          // Clean up stale session
+          localStorage.removeItem("start_" + day);
+          localStorage.removeItem("session_id_" + day);
+          localStorage.removeItem("session_start_" + day);
+          localStorage.removeItem("summary_emitted_" + day);
+        } else {
+          const endedAt = Date.now();
+          window.generateWorkoutSummary(sessionId, sessionStartTime, endedAt, day)
+            .then(summary => {
+              return window.emitWorkoutSummary(summary);
+            })
+            .then(() => {
+              localStorage.setItem("summary_emitted_" + day, "true");
+            })
+            .catch(error => {
+              console.error('Error emitting workout summary on completion:', error);
+              // If error is due to duration validation, clean up the stale session
+              if (error.message && error.message.includes('exceeds maximum')) {
+                console.warn('Stale session detected on completion, cleaning up...');
+                localStorage.removeItem("start_" + day);
+                localStorage.removeItem("session_id_" + day);
+                localStorage.removeItem("session_start_" + day);
+                localStorage.removeItem("summary_emitted_" + day);
+              }
+            });
+        }
       }
     }
     
