@@ -330,9 +330,15 @@ async function sendWorkoutToSisu(sessionId) {
     
     const summary = workoutData.summary;
     
-    // Remove 'day' field if present (SISU doesn't expect it in the payload)
+    // Build payload for SISU.
+    // NOTE: `day` is optional in SISU (it's not used by the ingest route).
+    // If `day` is missing, it means the workout was stored without it (data integrity issue),
+    // but we don't assume "today" since users may log workouts for previous days.
     const payload = { ...summary };
-    delete payload.day;
+    // Only include `day` if it's a valid non-empty string
+    if (typeof payload.day !== 'string' || payload.day.trim() === '') {
+      delete payload.day; // Remove invalid/empty day - SISU accepts optional day
+    }
     
     // POST to SISU (auto-detect protocol to match current page)
     // Clean host to ensure no protocol prefix (defensive programming)

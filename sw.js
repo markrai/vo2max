@@ -69,6 +69,14 @@ self.addEventListener('message', (event) => {
 
 // Fetch event - network-first for HTML, cache-first for assets
 self.addEventListener('fetch', (event) => {
+  // IMPORTANT: do not interfere with cross-origin requests (e.g., SISU sync).
+  // If we handle them here and the network request fails (TLS/mixed-content/etc),
+  // our fallback Response(503) masks the real browser error and makes debugging impossible.
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    return; // Let the browser handle it normally.
+  }
+
   // Network-first strategy for HTML documents to get updates immediately
   if (event.request.destination === 'document' || 
       event.request.url.endsWith('.html') ||
