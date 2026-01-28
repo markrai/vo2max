@@ -117,13 +117,14 @@ function applyPhaseStyle(key) {
 // saveHRV() removed - HRV will be handled via SISU sync in the future
 
 function updateDisplay() {
-  if (typeof getPlan !== 'function' || typeof getWorkoutMetadata !== 'function') return;
-  const day = getSelectedDay();
-  const plan = getPlan();
-  const workoutMetadata = getWorkoutMetadata();
-  const base = plan[day];
+  try {
+    if (typeof getPlan !== 'function' || typeof getWorkoutMetadata !== 'function') return;
+    const day = getSelectedDay();
+    const plan = getPlan();
+    const workoutMetadata = getWorkoutMetadata();
+    const base = plan[day];
 
-  ensureWorkoutDayDropdown();
+    ensureWorkoutDayDropdown();
   
   // Update activity icon based on machine type
   const activityIcon = document.getElementById('activityIcon');
@@ -341,6 +342,13 @@ function updateDisplay() {
   }
   
   applyPhaseStyle(phase.phase);
+  } catch (e) {
+    if (e instanceof TypeError && e.message && e.message.includes('null')) {
+      console.warn('updateDisplay: DOM element missing', e.message);
+    } else {
+      throw e;
+    }
+  }
 }
 
 // Get warmup subsection name for display in phase box
