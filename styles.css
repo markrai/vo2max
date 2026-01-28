@@ -197,10 +197,10 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
 .ring-progress { fill: none; stroke: #3d7cff; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 339.292; stroke-dashoffset: 339.292; transition: stroke-dashoffset 0.25s linear; }
 .ring-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.1rem; text-align: center; }
 
-/* Heart pulsation animation */
+/* Heart pulsation animation - scale only so heart and HR text stay aligned */
 @keyframes heartPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.15); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 /* Icon container for consistent alignment */
@@ -229,8 +229,8 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   height: 100%;
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg);
-  animation: heartPulse 1s ease-in-out infinite;
   transform-origin: center center;
+  /* Animation (BPM-based duration) is set by JS in updateHeartPulse() */
 }
 
 #activityIcon {
@@ -263,7 +263,7 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   width: 100%;
 }
 
-/* HR range - directly below heart icon */
+/* HR range - directly below heart icon, anchored to heart container */
 #hrTarget {
   position: absolute;
   left: 50%;
@@ -276,6 +276,8 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  z-index: 5;
+  color: inherit;
 }
 
 /* Mobile view - optimize for tall screens like Pixel 8 (1080x2400) */
@@ -367,11 +369,11 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     position: relative !important;
     width: 100% !important;
     height: 100% !important;
-    transform: none !important;
-    transform-origin: center bottom !important;
+    transform: none;
+    transform-origin: center center !important;
     object-fit: contain !important;
-    object-position: center bottom !important;
-    animation: heartPulseMobile 1s ease-in-out infinite !important;
+    object-position: center center !important;
+    /* Animation (BPM-based duration) is set by JS in updateHeartPulse() - transform has no !important so keyframes can apply */
   }
   
   /* Reposition activity icon to bottom right of section - aligned baseline */
@@ -446,10 +448,10 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   .tab-label-long { display: none; }
   .tab-label-short { display: inline; }
   
-  /* Heart pulse animation for mobile - maintains bottom alignment */
+  /* Heart pulse animation for mobile - scale only so heart and HR text stay in place */
   @keyframes heartPulseMobile {
-    0%, 100% { transform: translateY(50%) scale(1); }
-    50% { transform: translateY(50%) scale(1.15); }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
   }
 }
 
