@@ -27,6 +27,7 @@
     <!-- Tab buttons -->
     <div class="tab-buttons">
       <button class="tab-button active" onclick="switchTab('personal')">Profile</button>
+      <button class="tab-button" onclick="switchTab('preferences')"><span class="tab-label-long">Preferences</span><span class="tab-label-short">Prefs</span></button>
       <button class="tab-button" onclick="switchTab('workouts')">Workouts</button>
       <button class="tab-button" onclick="switchTab('sisu')">Sync</button>
       <button class="tab-button" onclick="switchTab('install')">Install</button>
@@ -93,6 +94,16 @@
       </div>
 
       <button class="button" onclick="saveProfile()">Save Profile</button>
+    </div>
+    
+    <!-- Preferences Tab -->
+    <div id="preferencesTab" class="tab-content">
+      <div class="modal-section">
+        <div class="modal-field modal-field-toggle">
+          <label class="modal-label" for="showSecondsCountdown">Show seconds countdown for entire workout</label>
+          <input type="checkbox" id="showSecondsCountdown" class="preference-toggle" onchange="savePreferenceShowSeconds(this.checked)">
+        </div>
+      </div>
     </div>
     
     <!-- Workouts Tab -->

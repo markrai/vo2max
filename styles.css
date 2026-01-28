@@ -53,6 +53,13 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
 .tab-button.active { color: #3d7cff; border-bottom-color: #3d7cff; }
 .tab-content { display: none; min-height: 400px; }
 .tab-content.active { display: block; }
+.tab-label-short { display: none; }
+.tab-label-long { display: inline; }
+
+/* Preference toggle row */
+.modal-field-toggle { align-items: center; }
+.modal-field-toggle .modal-label { margin-bottom: 0; }
+.preference-toggle { width: 20px; height: 20px; accent-color: #3d7cff; cursor: pointer; flex-shrink: 0; }
 
 /* Workout summary list */
 .workout-summary-list { max-height: 60vh; overflow-y: auto; min-height: 350px; }
@@ -433,6 +440,9 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
     padding: 14px;
     font-size: 1rem;
   }
+  
+  .tab-label-long { display: none; }
+  .tab-label-short { display: inline; }
   
   /* Heart pulse animation for mobile - maintains bottom alignment */
   @keyframes heartPulseMobile {

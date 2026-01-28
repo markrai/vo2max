@@ -138,10 +138,17 @@ function getPhase(elapsedSec, blocks) {
   return { phase: "Completed", timeLeft: 0, done: true };
 }
 
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
+function formatTime(sec, options) {
+  // When options omitted (e.g. phase display), show seconds. Ring uses options.showSeconds from preference.
+  const showSeconds = (options && 'showSeconds' in options) ? options.showSeconds : true;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  return m + "m " + s + "s";
+  const parts = [];
+  if (h > 0) parts.push(h + "h");
+  parts.push(m + "m");
+  if (showSeconds) parts.push(s + "s");
+  return parts.join(" ");
 }
 
 // HRV functions - reserved for future SISU sync integration
@@ -184,7 +191,8 @@ function updateRing(elapsedSec, blocks) {
   el.style.strokeDashoffset = offset;
 
   const remaining = totalSec - cappedElapsed;
-  center.textContent = formatTime(remaining);
+  const showSeconds = typeof window.getShowSecondsCountdown === 'function' && window.getShowSecondsCountdown();
+  center.textContent = formatTime(remaining, { showSeconds });
 }
 
 // HR target text generation

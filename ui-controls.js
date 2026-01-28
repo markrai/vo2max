@@ -505,6 +505,7 @@ window.updateHeartColor = updateHeartColor;
 function switchTab(tabName) {
   // Hide all tabs
   document.getElementById('personalTab').classList.remove('active');
+  document.getElementById('preferencesTab').classList.remove('active');
   document.getElementById('workoutsTab').classList.remove('active');
   document.getElementById('sisuTab').classList.remove('active');
   document.getElementById('installTab').classList.remove('active');
@@ -517,21 +518,39 @@ function switchTab(tabName) {
   if (tabName === 'personal') {
     document.getElementById('personalTab').classList.add('active');
     buttons[0].classList.add('active');
+  } else if (tabName === 'preferences') {
+    document.getElementById('preferencesTab').classList.add('active');
+    buttons[1].classList.add('active');
+    loadPreferences();
   } else if (tabName === 'workouts') {
     document.getElementById('workoutsTab').classList.add('active');
-    buttons[1].classList.add('active');
+    buttons[2].classList.add('active');
     loadWorkoutSummaries();
   } else if (tabName === 'sisu') {
     document.getElementById('sisuTab').classList.add('active');
-    buttons[2].classList.add('active');
+    buttons[3].classList.add('active');
     // Load SISU settings when tab is opened
     if (typeof window.loadSisuSettings === 'function') {
       window.loadSisuSettings();
     }
   } else if (tabName === 'install') {
     document.getElementById('installTab').classList.add('active');
-    buttons[3].classList.add('active');
+    buttons[4].classList.add('active');
   }
+}
+
+// Preferences: show seconds in ring countdown (default off)
+function getShowSecondsCountdown() {
+  return localStorage.getItem('showSecondsCountdown') === 'true';
+}
+
+function loadPreferences() {
+  const cb = document.getElementById('showSecondsCountdown');
+  if (cb) cb.checked = getShowSecondsCountdown();
+}
+
+function savePreferenceShowSeconds(checked) {
+  localStorage.setItem('showSecondsCountdown', checked ? 'true' : 'false');
 }
 
 // Load and display workout summaries
@@ -946,6 +965,8 @@ function downloadWorkoutJson(sessionId) {
 
 // Expose functions globally
 window.switchTab = switchTab;
+window.getShowSecondsCountdown = getShowSecondsCountdown;
+window.savePreferenceShowSeconds = savePreferenceShowSeconds;
 window.loadWorkoutSummaries = loadWorkoutSummaries;
 window.viewWorkoutSummary = viewWorkoutSummary;
 window.showWorkoutSummaryModal = showWorkoutSummaryModal;
