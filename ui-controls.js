@@ -161,7 +161,7 @@ function updateDisplay() {
   // Use base workout plan directly (HRV adjustments will come from SISU sync in the future)
   const blocks = adjustedBlockLengths(base, null);
   document.getElementById('workoutBlocks').textContent =
-    "Warm-Up: " + blocks.warm + " min · Sustain: " + blocks.sustain + " min · Cool-Down: " + blocks.cool + " min";
+    "Warm-Up: " + blocks.warm + " min · Workout: " + blocks.sustain + " min · Cool-Down: " + blocks.cool + " min";
 
   const start = getStartTime(day);
   let elapsedSec = 0;
@@ -259,6 +259,7 @@ function updateDisplay() {
       phaseDisplayName = "Warm-Up (" + subsectionName + ")";
     }
   } else if (phase.phase === "Sustain") {
+    phaseDisplayName = "Workout";
     const intervalName = getCurrentIntervalName(day, elapsedSec, blocks);
     if (intervalName) {
       phaseDisplayName = intervalName;
