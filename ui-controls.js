@@ -424,16 +424,22 @@ function updateHeartColor(liveBpm, hrTargetText) {
   const heartIcon = document.getElementById('heartIcon');
   if (!heartIcon) return;
   
-  // If no live BPM or no target, use default color (red)
-  if (!liveBpm || liveBpm <= 0 || !hrTargetText || hrTargetText === "") {
-    heartIcon.style.setProperty('filter', 'brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg)', 'important');
+  // If no live HR detected, use default color (white)
+  if (!liveBpm || liveBpm <= 0) {
+    heartIcon.style.setProperty('filter', 'brightness(0) invert(1)', 'important');
+    return;
+  }
+  
+  // No target text - can't compare, use white default
+  if (!hrTargetText || hrTargetText === "") {
+    heartIcon.style.setProperty('filter', 'brightness(0) invert(1)', 'important');
     return;
   }
   
   const range = parseHrTargetRange(hrTargetText);
   if (!range) {
-    // Can't parse range, use default color
-    heartIcon.style.setProperty('filter', 'brightness(0) saturate(100%) invert(27%) sepia(100%) saturate(10000%) hue-rotate(0deg)', 'important');
+    // Can't parse range, use default color (white)
+    heartIcon.style.setProperty('filter', 'brightness(0) invert(1)', 'important');
     return;
   }
   
