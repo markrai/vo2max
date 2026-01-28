@@ -171,6 +171,7 @@ function updateDisplay() {
       phaseDisplayEl.innerHTML = '<span class="phase-name">Not Started</span>';
       phaseDisplayEl.dataset.phaseState = "idle";
     }
+    if (typeof window.resetVoiceState === 'function') window.resetVoiceState();
     document.getElementById('startButton').innerText = "Start Workout";
     document.getElementById('startButton').onclick = startWorkout;
     document.getElementById('startButton').style.display = "block";
@@ -239,6 +240,7 @@ function updateDisplay() {
       phaseDisplayEl.innerHTML = '<span class="phase-name">Completed</span>';
       phaseDisplayEl.dataset.phaseState = "completed";
     }
+    if (typeof window.announcePhaseIfChanged === 'function') window.announcePhaseIfChanged('Completed');
     document.getElementById('startButton').innerText = "Restart Workout";
     document.getElementById('startButton').onclick = restartWorkout;
     document.getElementById('startButton').style.display = "block";
@@ -270,6 +272,7 @@ function updateDisplay() {
     phaseDisplayEl.innerHTML = '<span class="phase-name">' + phaseDisplayName + '</span><span class="phase-time">' + formatTime(phase.timeLeft) + '</span>';
     phaseDisplayEl.dataset.phaseState = "active";
   }
+  if (typeof window.announcePhaseIfChanged === 'function') window.announcePhaseIfChanged(phaseDisplayName);
 
   const hrTargetTextValue = hrTargetText(phase.phase, day, elapsedSec, blocks);
   hrTargetEl.textContent = hrTargetTextValue;
@@ -537,6 +540,7 @@ function switchTab(tabName) {
   } else if (tabName === 'install') {
     document.getElementById('installTab').classList.add('active');
     buttons[4].classList.add('active');
+    if (typeof window.refreshInstallTabContent === 'function') window.refreshInstallTabContent();
   }
 }
 
@@ -545,13 +549,23 @@ function getShowSecondsCountdown() {
   return localStorage.getItem('showSecondsCountdown') === 'true';
 }
 
+function getVoicePromptsEnabled() {
+  return localStorage.getItem('voicePromptsEnabled') !== 'false';
+}
+
 function loadPreferences() {
   const cb = document.getElementById('showSecondsCountdown');
   if (cb) cb.checked = getShowSecondsCountdown();
+  const voiceCb = document.getElementById('voicePromptsEnabled');
+  if (voiceCb) voiceCb.checked = getVoicePromptsEnabled();
 }
 
 function savePreferenceShowSeconds(checked) {
   localStorage.setItem('showSecondsCountdown', checked ? 'true' : 'false');
+}
+
+function savePreferenceVoicePrompts(checked) {
+  localStorage.setItem('voicePromptsEnabled', checked ? 'true' : 'false');
 }
 
 // Load and display workout summaries
@@ -967,7 +981,9 @@ function downloadWorkoutJson(sessionId) {
 // Expose functions globally
 window.switchTab = switchTab;
 window.getShowSecondsCountdown = getShowSecondsCountdown;
+window.getVoicePromptsEnabled = getVoicePromptsEnabled;
 window.savePreferenceShowSeconds = savePreferenceShowSeconds;
+window.savePreferenceVoicePrompts = savePreferenceVoicePrompts;
 window.loadWorkoutSummaries = loadWorkoutSummaries;
 window.viewWorkoutSummary = viewWorkoutSummary;
 window.showWorkoutSummaryModal = showWorkoutSummaryModal;

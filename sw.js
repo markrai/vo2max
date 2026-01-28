@@ -1,7 +1,5 @@
 // Service Worker for VO2 Max Coach PWA
-// Version is embedded here - update when releasing new version
-const APP_VERSION = '0.8.5';
-const CACHE_NAME = `vo2-coach-${APP_VERSION}`;
+// Cache name is derived from version.js (single source of truth)
 
 const urlsToCache = [
   '/',
@@ -14,6 +12,7 @@ const urlsToCache = [
   '/workout-summary.js',
   '/zone-calculator.js',
   '/profile.js',
+  '/voice.js',
   '/ui-controls.js',
   '/sisu-sync.js',
   '/pwa-install.js',
@@ -28,13 +27,28 @@ const urlsToCache = [
   '/favicon.ico'
 ];
 
+// Resolve cache name by fetching version.js and parsing APP_VERSION (single source of truth)
+let _cacheNamePromise = null;
+function getCacheName() {
+  if (_cacheNamePromise) return _cacheNamePromise;
+  _cacheNamePromise = self.fetch('/version.js')
+    .then((r) => r.text())
+    .then((text) => {
+      const m = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      const version = (m && m[1]) ? m[1] : '0';
+      return 'vo2-coach-' + version;
+    })
+    .catch(() => 'vo2-coach-unknown');
+  return _cacheNamePromise;
+}
+
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+    getCacheName()
+      .then((cacheName) => {
+        console.log('Opened cache', cacheName);
+        return caches.open(cacheName).then((cache) => cache.addAll(urlsToCache));
       })
       .catch((error) => {
         console.error('Cache failed:', error);
@@ -43,21 +57,24 @@ self.addEventListener('install', (event) => {
   self.skipWaiting(); // Activate immediately
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches, then claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    getCacheName()
+      .then((currentName) => {
+        return caches.keys().then((cacheNames) => {
+          return Promise.all(
+            cacheNames.map((cacheName) => {
+              if (cacheName !== currentName) {
+                console.log('Deleting old cache:', cacheName);
+                return caches.delete(cacheName);
+              }
+            })
+          );
+        });
+      })
+      .then(() => self.clients.claim())
   );
-  return self.clients.claim(); // Take control of all pages immediately
 });
 
 // Listen for skip waiting message from client
@@ -84,48 +101,39 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Clone the response before caching
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+          getCacheName().then((cacheName) => {
+            caches.open(cacheName).then((cache) => cache.put(event.request, responseClone));
           });
           return response;
         })
         .catch(() => {
-          // If network fails, try cache
-          return caches.match(event.request)
-            .then((cachedResponse) => {
-              // If cache fails too, return index.html for navigation requests
+          return getCacheName().then((cacheName) => {
+            return caches.match(event.request).then((cachedResponse) => {
               if (!cachedResponse && event.request.destination === 'document') {
                 return caches.match('/index.html');
               }
               return cachedResponse;
             });
+          });
         })
     );
   } else {
     // Cache-first strategy for assets (CSS, JS, images, etc.)
     event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          if (response) {
-            return response;
-          }
-          // Not in cache, fetch from network
-          return fetch(event.request)
-            .then((networkResponse) => {
-              // Cache the response for future use
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseClone);
-              });
-              return networkResponse;
-            })
-            .catch(() => {
-              // Network failed and not in cache
-              return new Response('Offline', { status: 503 });
-            });
-        })
+      getCacheName().then((cacheName) => {
+        return caches.match(event.request)
+          .then((response) => {
+            if (response) return response;
+            return fetch(event.request)
+              .then((networkResponse) => {
+                const responseClone = networkResponse.clone();
+                caches.open(cacheName).then((cache) => cache.put(event.request, responseClone));
+                return networkResponse;
+              })
+              .catch(() => new Response('Offline', { status: 503 }));
+          });
+      })
     );
   }
 });

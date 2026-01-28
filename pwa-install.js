@@ -8,7 +8,8 @@ let updateNotificationShown = false;
 // Register Service Worker (without cache-busting on initial load to avoid loops)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    const swUrl = '/sw.js?v=' + (typeof window.APP_VERSION !== 'undefined' ? window.APP_VERSION : '0');
+    navigator.serviceWorker.register(swUrl)
       .then((registration) => {
         serviceWorkerRegistration = registration;
         console.log('ServiceWorker registration successful:', registration.scope);
@@ -153,12 +154,33 @@ let deferredPrompt;
 let installButton = null;
 let installPromptEscHandler = null;
 
+// Detect if app is running as installed PWA
+function isAppInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.navigator.standalone === true;
+}
+
+// Show installed state or install prompt in Install tab
+function refreshInstallTabContent() {
+  const notInstalledEl = document.getElementById('installNotInstalledState');
+  const installedEl = document.getElementById('installInstalledState');
+  if (!notInstalledEl || !installedEl) return;
+
+  if (isAppInstalled()) {
+    notInstalledEl.style.display = 'none';
+    installedEl.style.display = 'block';
+  } else {
+    notInstalledEl.style.display = 'block';
+    installedEl.style.display = 'none';
+  }
+}
+
 // Create install button if not already installed
 function createInstallButton() {
-  // Check if already installed
-  if (window.matchMedia('(display-mode: standalone)').matches || 
-      window.navigator.standalone === true) {
-    return; // Already installed
+  if (isAppInstalled()) {
+    refreshInstallTabContent();
+    return;
   }
 
   // Check if button already exists
@@ -297,11 +319,10 @@ function shouldShowInstallPrompt() {
 
 // Initialize on page load
 window.addEventListener('load', () => {
+  refreshInstallTabContent();
   createInstallButton();
   
-  // Check if app is already installed
-  if (window.matchMedia('(display-mode: standalone)').matches || 
-      window.navigator.standalone === true) {
+  if (isAppInstalled()) {
     console.log('App is already installed');
     return;
   }
@@ -321,6 +342,8 @@ window.addEventListener('appinstalled', () => {
   if (installButton) {
     installButton.style.display = 'none';
   }
-  // Remove install prompt if it's showing
   closeInstallPrompt();
+  refreshInstallTabContent();
 });
+
+window.refreshInstallTabContent = refreshInstallTabContent;

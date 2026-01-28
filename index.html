@@ -22,7 +22,7 @@
   <div class="modal" style="max-width: 500px;">
     <div class="close-btn" onclick="closeModal()">✕</div>
     <div class="modal-title">Settings</div>
-    <div id="appVersion" class="app-version">v0.8.0</div>
+    <div id="appVersion" class="app-version"></div>
     
     <!-- Tab buttons -->
     <div class="tab-buttons">
@@ -103,6 +103,10 @@
           <label class="modal-label" for="showSecondsCountdown">Show seconds countdown for entire workout</label>
           <input type="checkbox" id="showSecondsCountdown" class="preference-toggle" onchange="savePreferenceShowSeconds(this.checked)">
         </div>
+        <div class="modal-field modal-field-toggle">
+          <label class="modal-label" for="voicePromptsEnabled">Voice prompts</label>
+          <input type="checkbox" id="voicePromptsEnabled" class="preference-toggle" onchange="savePreferenceVoicePrompts(this.checked)">
+        </div>
       </div>
     </div>
     
@@ -147,11 +151,15 @@
     <div id="installTab" class="tab-content">
       <div id="installContent" class="install-content">
         <div class="label" style="text-align: center; margin-bottom: 16px;">Install App</div>
-        <div class="modal-section">
+        <div id="installNotInstalledState" class="modal-section">
           <div class="label" style="text-align: center; opacity: 0.7; margin-bottom: 20px;">
             Install this app on your device for a better experience and offline access.
           </div>
           <div id="installButtonContainer"></div>
+        </div>
+        <div id="installInstalledState" class="modal-section install-installed-state" style="display: none;">
+          <div class="install-checkmark" aria-hidden="true">✓</div>
+          <div class="label" style="text-align: center; opacity: 0.9;">App is already installed</div>
         </div>
       </div>
     </div>
@@ -238,6 +246,7 @@
 <script src="workout-data.js"></script>
 <script src="workout-logic.js"></script>
 <script src="profile.js"></script>
+<script src="voice.js"></script>
 <script src="sisu-sync.js"></script>
 <script src="ui-controls.js"></script>
 <script src="main.js"></script>
