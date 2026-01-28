@@ -96,26 +96,10 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   --drag-x: -12px;
   transition: opacity 0.5s ease, filter 0.5s ease, transform 0.35s ease;
 }
+/* Left edge: shows when swiping right → SISU (blue) */
 .swipe-left-indicator {
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: linear-gradient(to bottom, #ef4444, #dc2626);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-}
-.workout-item[data-drag-direction="left"] .swipe-left-indicator {
-  opacity: 0.6;
-}
-.workout-item[data-swipe-armed="true"] .swipe-left-indicator {
-  opacity: 0.9;
-}
-.swipe-right-indicator {
-  position: absolute;
-  right: 0;
   top: 0;
   bottom: 0;
   width: 6px;
@@ -124,10 +108,28 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
   transition: opacity 0.2s ease;
   pointer-events: none;
 }
-.workout-item[data-drag-direction="right"] .swipe-right-indicator {
+.workout-item[data-drag-direction="right"] .swipe-left-indicator {
   opacity: 0.6;
 }
-.workout-item[data-swipe-armed="true"] .swipe-right-indicator {
+.workout-item[data-swipe-armed="true"][data-drag-direction="right"] .swipe-left-indicator {
+  opacity: 0.9;
+}
+/* Right edge: shows when swiping left → delete (red) */
+.swipe-right-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(to bottom, #ef4444, #dc2626);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.workout-item[data-drag-direction="left"] .swipe-right-indicator {
+  opacity: 0.6;
+}
+.workout-item[data-swipe-armed="true"][data-drag-direction="left"] .swipe-right-indicator {
   opacity: 0.9;
 }
 @keyframes swipe-complete-glow {
