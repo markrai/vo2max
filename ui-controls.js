@@ -8,22 +8,41 @@ const BPM_TIMEOUT_MS = 3000; // Stop animation if no BPM received for 3 seconds
 window.liveBpm = liveBpm;
 window.lastBpmUpdateTime = lastBpmUpdateTime;
 
-function cycleToNextDay() {
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const currentDay = selectedDay || todayName();
-  const currentIndex = days.indexOf(currentDay);
-  const nextIndex = (currentIndex + 1) % days.length;
-  selectedDay = days[nextIndex];
-  updateDisplay();
-}
-
 function getSelectedDay() {
   return selectedDay || todayName();
 }
 
+function setSelectedDay(day) {
+  selectedDay = day;
+}
+
+// Populate workout dropdown once and sync value to selected day
+function ensureWorkoutDayDropdown() {
+  const select = document.getElementById('workoutDaySelect');
+  if (!select) return;
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const plan = typeof getPlan === 'function' ? getPlan() : {};
+  const metadata = typeof getWorkoutMetadata === 'function' ? getWorkoutMetadata() : {};
+  if (select.options.length === 0) {
+    days.forEach((day) => {
+      const opt = document.createElement('option');
+      opt.value = day;
+      const meta = metadata[day];
+      opt.textContent = meta && meta.type ? day + ': ' + meta.type : day;
+      select.appendChild(opt);
+    });
+    select.addEventListener('change', function () {
+      selectedDay = this.value;
+      updateDisplay();
+    });
+  }
+  const current = getSelectedDay();
+  if (select.value !== current) select.value = current;
+}
+
 // Make function globally accessible
 window.getSelectedDay = getSelectedDay;
-window.cycleToNextDay = cycleToNextDay;
+window.setSelectedDay = setSelectedDay;
 window.connectHr = connectHr;
 
 function connectHr() {
@@ -103,15 +122,7 @@ function updateDisplay() {
   const workoutMetadata = getWorkoutMetadata();
   const base = plan[day];
 
-  // Format day display with workout type only (no machine)
-  let dayText = day;
-  if (base && workoutMetadata[day]) {
-    const meta = workoutMetadata[day];
-    if (meta.type) {
-      dayText = day + ": " + meta.type;
-    }
-  }
-  document.getElementById('dayDisplay').textContent = dayText;
+  ensureWorkoutDayDropdown();
   
   // Update activity icon based on machine type
   const activityIcon = document.getElementById('activityIcon');
@@ -183,7 +194,12 @@ function updateDisplay() {
     return;
   }
 
-  elapsedSec = Math.floor((Date.now() - start) / 1000);
+  const paused = typeof window.isPaused === 'function' && window.isPaused(day);
+  if (paused) {
+    elapsedSec = typeof window.getPausedElapsed === 'function' ? window.getPausedElapsed(day) : 0;
+  } else {
+    elapsedSec = Math.floor((Date.now() - start) / 1000);
+  }
   const phase = getPhase(elapsedSec, blocks);
 
   updateRing(elapsedSec, blocks);
@@ -251,7 +267,25 @@ function updateDisplay() {
     return;
   }
 
-  document.getElementById('startButton').style.display = "none";
+  // Play/Pause button: in progress and not paused -> Pause; in progress and paused -> Resume
+  const startBtn = document.getElementById('startButton');
+  if (paused) {
+    startBtn.innerText = "Resume";
+    startBtn.onclick = function () {
+      if (typeof window.resumeWorkout === 'function') window.resumeWorkout(day);
+      if (typeof window.requestWakeLock === 'function') window.requestWakeLock();
+      updateDisplay();
+    };
+    startBtn.style.display = "block";
+  } else {
+    startBtn.innerText = "Pause";
+    startBtn.onclick = function () {
+      if (typeof window.pauseWorkout === 'function') window.pauseWorkout(day, elapsedSec);
+      if (typeof window.releaseWakeLock === 'function') window.releaseWakeLock();
+      updateDisplay();
+    };
+    startBtn.style.display = "block";
+  }
   
   // Get phase name, including warmup subsection or interval name if applicable
   let phaseDisplayName = phase.phase;

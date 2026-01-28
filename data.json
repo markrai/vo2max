@@ -58,7 +58,7 @@
       },
       "main_set": {
         "duration_min": "20–30",
-        "notes": "HR not target-driven"
+        "target_hr_bpm": "100–160"
       },
       "cooldown": {
         "duration_min": 3,

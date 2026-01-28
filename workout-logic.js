@@ -8,6 +8,33 @@ function getStartTime(day) {
   return localStorage.getItem("start_" + dayToUse);
 }
 
+function isPaused(day) {
+  const dayToUse = day || todayName();
+  return localStorage.getItem("paused_" + dayToUse) === "true";
+}
+
+function getPausedElapsed(day) {
+  const dayToUse = day || todayName();
+  return parseInt(localStorage.getItem("paused_elapsed_" + dayToUse) || "0", 10);
+}
+
+function pauseWorkout(day, elapsedSec) {
+  const dayToUse = day || todayName();
+  localStorage.setItem("paused_" + dayToUse, "true");
+  localStorage.setItem("paused_elapsed_" + dayToUse, String(elapsedSec));
+  if (typeof updateDisplay === 'function') updateDisplay();
+}
+
+function resumeWorkout(day) {
+  const dayToUse = day || todayName();
+  const pausedElapsed = getPausedElapsed(dayToUse);
+  const newStart = Date.now() - (pausedElapsed * 1000);
+  localStorage.setItem("start_" + dayToUse, String(newStart));
+  localStorage.removeItem("paused_" + dayToUse);
+  localStorage.removeItem("paused_elapsed_" + dayToUse);
+  if (typeof updateDisplay === 'function') updateDisplay();
+}
+
 function startWorkout() {
   // Get selected day from ui-controls.js if available, otherwise use today
   const day = (typeof getSelectedDay === 'function') ? getSelectedDay() : todayName();
@@ -82,6 +109,8 @@ async function restartWorkout() {
   localStorage.removeItem("session_id_" + day);
   localStorage.removeItem("session_start_" + day);
   localStorage.removeItem("summary_emitted_" + day);
+  localStorage.removeItem("paused_" + day);
+  localStorage.removeItem("paused_elapsed_" + day);
   
   // Clear HR samples for this session (optional cleanup)
   if (sessionId && typeof window.clearHrSamples === 'function') {
@@ -343,4 +372,8 @@ function handleCharacteristicValueChanged(event) {
 }
 
 window.initiateHrConnection = initiateHrConnection;
+window.isPaused = isPaused;
+window.getPausedElapsed = getPausedElapsed;
+window.pauseWorkout = pauseWorkout;
+window.resumeWorkout = resumeWorkout;
 

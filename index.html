@@ -207,9 +207,8 @@
 <div class="container">
 
 <div class="section workout-main-section">
-  <div style="position: relative;">
-    <div id="dayDisplay" class="metric"></div>
-    <button id="nextDayBtn" onclick="cycleToNextDay()">▶</button>
+  <div class="workout-day-row" style="position: relative;">
+    <select id="workoutDaySelect" class="workout-day-select" aria-label="Select workout day"></select>
   </div>
 
   <button class="button" id="startButton" onclick="startWorkout()">Start Workout</button>

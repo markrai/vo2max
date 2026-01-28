@@ -46,6 +46,8 @@ function cleanupStaleWorkoutSessions() {
         localStorage.removeItem(`session_id_${day}`);
         localStorage.removeItem(`session_start_${day}`);
         localStorage.removeItem(`summary_emitted_${day}`);
+        localStorage.removeItem(`paused_${day}`);
+        localStorage.removeItem(`paused_elapsed_${day}`);
       }
     }
   });

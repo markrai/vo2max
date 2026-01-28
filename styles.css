@@ -8,9 +8,9 @@ h1 { font-size: 1.8rem; text-align: center; margin: 16px 0 18px; }
 .button { width: 100%; padding: 14px; background: #3d7cff; color: #fff; border: none; border-radius: 12px; margin-top: 14px; font-size: 1rem; font-weight: 600; }
 
 .metric { font-size: 1rem; margin-top: 6px; text-align: center; }
-#nextDayBtn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; padding: 4px 8px; opacity: 0.7; transition: opacity 0.2s; }
-#nextDayBtn:hover { opacity: 1; }
-#nextDayBtn:active { transform: translateY(-50%) scale(0.95); }
+.workout-day-row { margin-top: 6px; }
+.workout-day-select { width: 100%; max-width: 100%; font-size: 1rem; padding: 8px 12px; border-radius: 10px; border: 1px solid #333; background: #232323; color: #fff; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; box-sizing: border-box; }
+.workout-day-select:focus { outline: none; border-color: #3d7cff; }
 .phase-box { display: flex; justify-content: space-between; align-items: center; font-size: 1.5rem; padding: 14px; background: #232323; border-radius: 12px; margin-top: 18px; }
 .phase-box .phase-name { flex: 1; text-align: left; }
 .phase-box .phase-time { flex: 0 0 auto; text-align: right; font-weight: 600; }
