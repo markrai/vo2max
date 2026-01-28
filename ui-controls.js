@@ -117,6 +117,7 @@ function applyPhaseStyle(key) {
 // saveHRV() removed - HRV will be handled via SISU sync in the future
 
 function updateDisplay() {
+  if (typeof getPlan !== 'function' || typeof getWorkoutMetadata !== 'function') return;
   const day = getSelectedDay();
   const plan = getPlan();
   const workoutMetadata = getWorkoutMetadata();
@@ -151,18 +152,20 @@ function updateDisplay() {
   // HRV handling removed - will be managed via SISU sync
 
   const hrTargetEl = document.getElementById('hrTarget');
+  const workoutBlocksEl = document.getElementById('workoutBlocks');
+  const startBtnEl = document.getElementById('startButton');
 
   if (!base) {
-    document.getElementById('workoutBlocks').textContent = "Rest Day";
+    if (workoutBlocksEl) workoutBlocksEl.textContent = "Rest Day";
     if (phaseDisplayEl) {
       phaseDisplayEl.innerHTML = '<span class="phase-name">Rest Day</span>';
       phaseDisplayEl.dataset.phaseState = "rest";
     }
     const activityIcon = document.getElementById('activityIcon');
     if (activityIcon) activityIcon.style.display = "none";
-    document.getElementById('startButton').style.display = "none";
+    if (startBtnEl) startBtnEl.style.display = "none";
     updateRing(0, { warm: 1, sustain: 1, cool: 1 });
-    hrTargetEl.textContent = "";
+    if (hrTargetEl) hrTargetEl.textContent = "";
     updateHeartPulse(null);
     updateHeartColor(null, "");
     applyPhaseStyle("Rest");
@@ -171,7 +174,7 @@ function updateDisplay() {
 
   // Use base workout plan directly (HRV adjustments will come from SISU sync in the future)
   const blocks = adjustedBlockLengths(base, null);
-  document.getElementById('workoutBlocks').textContent =
+  if (workoutBlocksEl) workoutBlocksEl.textContent =
     "Warm-Up: " + blocks.warm + " min · Workout: " + blocks.sustain + " min · Cool-Down: " + blocks.cool + " min";
 
   const start = getStartTime(day);
@@ -183,11 +186,13 @@ function updateDisplay() {
       phaseDisplayEl.dataset.phaseState = "idle";
     }
     if (typeof window.resetVoiceState === 'function') window.resetVoiceState();
-    document.getElementById('startButton').innerText = "Start Workout";
-    document.getElementById('startButton').onclick = startWorkout;
-    document.getElementById('startButton').style.display = "block";
+    if (startBtnEl) {
+      startBtnEl.innerText = "Start Workout";
+      startBtnEl.onclick = startWorkout;
+      startBtnEl.style.display = "block";
+    }
     updateRing(0, blocks);
-    hrTargetEl.textContent = "";
+    if (hrTargetEl) hrTargetEl.textContent = "";
     updateHeartPulse(null);
     updateHeartColor(null, "");
     applyPhaseStyle("idle");
@@ -257,10 +262,12 @@ function updateDisplay() {
       phaseDisplayEl.dataset.phaseState = "completed";
     }
     if (typeof window.announcePhaseIfChanged === 'function') window.announcePhaseIfChanged('Completed');
-    document.getElementById('startButton').innerText = "Restart Workout";
-    document.getElementById('startButton').onclick = restartWorkout;
-    document.getElementById('startButton').style.display = "block";
-    hrTargetEl.textContent = "";
+    if (startBtnEl) {
+      startBtnEl.innerText = "Restart Workout";
+      startBtnEl.onclick = restartWorkout;
+      startBtnEl.style.display = "block";
+    }
+    if (hrTargetEl) hrTargetEl.textContent = "";
     updateHeartPulse(null);
     updateHeartColor(null, "");
     applyPhaseStyle("completed");
@@ -268,23 +275,24 @@ function updateDisplay() {
   }
 
   // Play/Pause button: in progress and not paused -> Pause; in progress and paused -> Resume
-  const startBtn = document.getElementById('startButton');
-  if (paused) {
-    startBtn.innerText = "Resume";
-    startBtn.onclick = function () {
-      if (typeof window.resumeWorkout === 'function') window.resumeWorkout(day);
-      if (typeof window.requestWakeLock === 'function') window.requestWakeLock();
-      updateDisplay();
-    };
-    startBtn.style.display = "block";
-  } else {
-    startBtn.innerText = "Pause";
-    startBtn.onclick = function () {
-      if (typeof window.pauseWorkout === 'function') window.pauseWorkout(day, elapsedSec);
-      if (typeof window.releaseWakeLock === 'function') window.releaseWakeLock();
-      updateDisplay();
-    };
-    startBtn.style.display = "block";
+  if (startBtnEl) {
+    if (paused) {
+      startBtnEl.innerText = "Resume";
+      startBtnEl.onclick = function () {
+        if (typeof window.resumeWorkout === 'function') window.resumeWorkout(day);
+        if (typeof window.requestWakeLock === 'function') window.requestWakeLock();
+        updateDisplay();
+      };
+      startBtnEl.style.display = "block";
+    } else {
+      startBtnEl.innerText = "Pause";
+      startBtnEl.onclick = function () {
+        if (typeof window.pauseWorkout === 'function') window.pauseWorkout(day, elapsedSec);
+        if (typeof window.releaseWakeLock === 'function') window.releaseWakeLock();
+        updateDisplay();
+      };
+      startBtnEl.style.display = "block";
+    }
   }
   
   // Get phase name, including warmup subsection or interval name if applicable
@@ -309,7 +317,7 @@ function updateDisplay() {
   if (typeof window.announcePhaseIfChanged === 'function') window.announcePhaseIfChanged(phaseDisplayName);
 
   const hrTargetTextValue = hrTargetText(phase.phase, day, elapsedSec, blocks);
-  hrTargetEl.textContent = hrTargetTextValue;
+  if (hrTargetEl) hrTargetEl.textContent = hrTargetTextValue;
   
   // Heart animation is now controlled by live BPM from BLE monitor
   // Check if BPM data is stale and update animation accordingly
