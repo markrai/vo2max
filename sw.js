@@ -5,18 +5,19 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/styles.css',
-  '/main.js',
-  '/workout-data.js',
-  '/workout-logic.js',
-  '/workout-storage.js',
-  '/workout-summary.js',
-  '/zone-calculator.js',
-  '/profile.js',
-  '/voice.js',
-  '/ui-controls.js',
-  '/sisu-sync.js',
-  '/pwa-install.js',
-  '/version.js',
+  '/dist/main.js',
+  '/dist/workoutData.js',
+  '/dist/workoutLogic.js',
+  '/dist/workoutStorage.js',
+  '/dist/workoutSummary.js',
+  '/dist/zoneCalculator.js',
+  '/dist/profile.js',
+  '/dist/voice.js',
+  '/dist/uiControls.js',
+  '/dist/sisuSync.js',
+  '/dist/pwaInstall.js',
+  '/dist/wakeLock.js',
+  '/dist/version.js',
   '/data.json',
   '/manifest.json',
   '/heart.png',
@@ -31,10 +32,10 @@ const urlsToCache = [
 let _cacheNamePromise = null;
 function getCacheName() {
   if (_cacheNamePromise) return _cacheNamePromise;
-  _cacheNamePromise = self.fetch('/version.js')
+  _cacheNamePromise = self.fetch('/dist/version.js')
     .then((r) => r.text())
     .then((text) => {
-      const m = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      const m = text.match(/APP_VERSION\\s*=\\s*['\"]([^'\"]+)['\"]/);
       const version = (m && m[1]) ? m[1] : '0';
       return 'vo2-coach-' + version;
     })
